@@ -1,0 +1,41 @@
+From b9b185af7bd754f0428f7c21ed8e97587d9d0f7d Mon Sep 17 00:00:00 2001
+From: luca abeni <luca.abeni@santannapisa.it>
+Date: Thu, 18 Nov 2021 13:20:28 +0000
+Subject: [PATCH 10/10] Misc fixes
+
+---
+ kernel/sched/deadline.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index 3d0dda2cb..26c5c8200 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1473,6 +1473,7 @@ static void enqueue_task_dl(struct rq *rq, struct task_struct *p, int flags)
+ {
+ 	struct task_struct *pi_task = rt_mutex_get_top_task(p);
+ 	struct sched_dl_entity *pi_se = &p->dl;
++	unsigned int contending;
+ 
+ 	/*
+ 	 * Use the scheduling parameters of the top pi-waiter task if:
+@@ -1495,6 +1496,7 @@ static void enqueue_task_dl(struct rq *rq, struct task_struct *p, int flags)
+ 		BUG_ON(!p->dl.dl_boosted || flags != ENQUEUE_REPLENISH);
+ 		return;
+ 	}
++	contending = ((pi_se->dl_non_contending == 0) && (flags & ENQUEUE_WAKEUP)) || (flags & ENQUEUE_REPLENISH);
+ 
+ 	/*
+ 	 * Check if a constrained deadline task was activated
+@@ -1531,7 +1533,7 @@ static void enqueue_task_dl(struct rq *rq, struct task_struct *p, int flags)
+ 
+ 	enqueue_dl_entity(&p->dl, pi_se, flags);
+ 
+-	if (!task_current(rq, p) && p->nr_cpus_allowed > 1)
++	if (!task_current(rq, p) && p->nr_cpus_allowed > 1 && contending)
+ 		enqueue_pushable_dl_task(rq, p);
+ }
+ 
+-- 
+2.38.1
+

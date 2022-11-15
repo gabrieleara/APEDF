@@ -1,0 +1,34 @@
+From 99e30c01263af7b5f279dcf8d75b378b2859c440 Mon Sep 17 00:00:00 2001
+From: luca abeni <luca.abeni@santannapisa.it>
+Date: Thu, 18 Nov 2021 13:15:28 +0000
+Subject: [PATCH 05/10] Remove probably unneeded code
+
+If select_task_rq_dl() is not able to find a non-overloaded core,
+then doing gEDF is useless (it will be done later, by push)
+---
+ kernel/sched/deadline.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index e7cf1c9b8..f9e876364 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1623,6 +1623,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
+ 	target = find_later_rq_ff(p);
+ 	if (target >= 0) {
+ 		cpu = target;
++#if 0
+ 	} else if (rq->dl.this_bw > rq->dl.max_bw) {
+ 		/* FF did not work: Try gEDF */
+ 		target = find_later_rq(p);
+@@ -1631,6 +1632,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
+ 			(cpu_rq(target)->dl.dl_nr_running == 0))) {
+ 				cpu = target;
+ 		}
++#endif
+ 	}
+ 	rcu_read_unlock();
+ 
+-- 
+2.38.1
+

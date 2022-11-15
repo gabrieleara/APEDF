@@ -1,0 +1,22 @@
+From 785ef280bb93fade245037ef9ffbb2c051ec17ba Mon Sep 17 00:00:00 2001
+From: luca abeni <luca.abeni@santannapisa.it>
+Date: Thu, 18 Nov 2021 13:12:18 +0000
+Subject: [PATCH 03/10] Add apedf extraversion
+
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index 6f68e9b57..b6746679c 100644
+--- a/Makefile
++++ b/Makefile
+@@ -5,4 +5,4 @@
+-EXTRAVERSION =
++EXTRAVERSION =-apedf1
+ NAME = Kleptomaniac Octopus
+ 
+ # *DOCUMENTATION*
+-- 
+2.38.1
+

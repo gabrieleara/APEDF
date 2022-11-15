@@ -1,0 +1,168 @@
+From 56439bbc73ab3600cd0fa061321c4811dc97f6b6 Mon Sep 17 00:00:00 2001
+From: Gabriele Ara <gabriele.ara@santannapisa.it>
+Date: Thu, 18 Nov 2021 15:11:47 +0100
+Subject: Hierarchical EAS + apEDF by Walter Enzo Re
+
+---
+ kernel/sched/deadline.c | 131 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 131 insertions(+)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index be31a9d3d..a452bc3ae 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1656,6 +1656,12 @@ static void yield_task_dl(struct rq *rq)
+ static int find_later_rq(struct task_struct *task);
+ static int find_later_rq_ff(struct task_struct *task, int prev_cpu);
+ 
++/* EAS Hierarchical implementation functions*/
++static int find_energy_efficient_cpu_in_domain(struct task_struct *p, struct perf_domain *pd, struct sched_domain *sd);
++static int find_energy_efficient_cpu_ff(struct task_struct *p, int prev_cpu);
++static struct rq *find_lock_energy_rq_ff(struct task_struct *task, struct rq *rq, int prev_cpu);
++
++
+ /* Only try algorithms three times */
+ #define DL_MAX_TRIES 3
+ #define CONV_COUNT 10
+@@ -1932,6 +1938,89 @@ static struct task_struct *pick_earliest_pushable_dl_task(struct rq *rq, int cpu
+ 
+ static DEFINE_PER_CPU(cpumask_var_t, local_cpu_mask_dl);
+ 
++/*EAS Hierarchical functions*/
++#define CAP_LITTLE arch_scale_cpu_capacity(0)
++#define CAP_BIG    arch_scale_cpu_capacity(7)
++static int find_energy_efficient_cpu_in_domain(struct task_struct *p, struct perf_domain *pd, struct sched_domain *sd)
++{
++	unsigned long long min = ULLONG_MAX, util;
++	unsigned long total_cap;
++	int cpu, target = -1;
++
++	rcu_read_lock();
++	for_each_cpu_and(cpu, perf_domain_span(pd), sched_domain_span(sd)) {
++		if (!cpumask_test_cpu(cpu, p->cpus_ptr))
++			continue;
++
++		util = cpu_rq(cpu)->dl.this_bw + (cpu == task_cpu(p) ? 0 : p->dl.dl_bw);
++		total_cap = arch_scale_cpu_capacity(cpu);
++
++		if(util > cpu_rq(cpu)->dl.max_bw)
++			continue;
++		else
++		{
++			if (min > util)
++			{
++				target = cpu;
++				min = util;
++			}
++		}
++	}
++	rcu_read_unlock();
++	return target;
++}
++
++
++
++static int find_energy_efficient_cpu_ff(struct task_struct *p, int prev_cpu)
++{
++	struct root_domain *rd = cpu_rq(smp_processor_id())->rd;
++	struct sched_domain *sd;
++	struct perf_domain *pd, *little_domain, *big_domain;
++	int target = -1;
++	unsigned long bw;
++
++
++	rcu_read_lock();
++
++	pd = rcu_dereference(rd->pd);
++	big_domain = pd;
++	little_domain = pd->next;
++	if (!pd) {
++		rcu_read_unlock();
++		return find_later_rq_ff(p, prev_cpu);
++	}
++
++	sd = rcu_dereference(*this_cpu_ptr(&sd_asym_cpucapacity));
++	while (sd && !cpumask_test_cpu(prev_cpu, sched_domain_span(sd)))
++		sd = sd->parent;
++	if (!sd) {
++		rcu_read_unlock();
++		return find_later_rq_ff(p, prev_cpu);
++	}
++
++	rcu_read_unlock();
++	bw = p->dl.dl_bw << SCHED_CAPACITY_SHIFT >> BW_SHIFT;
++
++	if (bw < CAP_LITTLE )
++	{
++		target = find_energy_efficient_cpu_in_domain(p, little_domain, sd);
++		if (target < 0)
++		target = find_energy_efficient_cpu_in_domain(p, big_domain, sd);
++	}
++	else
++		target = find_energy_efficient_cpu_in_domain(p, big_domain, sd);
++
++	if (target <= 0)
++		target = find_later_rq_ff(p, prev_cpu);
++
++	return target;
++
++}
++
++
++
++
+ static int find_later_rq(struct task_struct *task)
+ {
+ 	struct sched_domain *sd;
+@@ -2141,6 +2230,48 @@ static struct rq *find_lock_later_rq_ff(struct task_struct *task, struct rq *rq)
+ 	return later_rq;
+ }
+ 
++static struct rq *find_lock_energy_rq_ff(struct task_struct *task, struct rq *rq, int prev_cpu)
++{
++	struct rq *later_rq = NULL;
++	int tries;
++	int cpu;
++
++	for (tries = 0; tries < DL_MAX_TRIES; tries++) {
++
++		cpu = find_energy_efficient_cpu_ff(task, prev_cpu);
++
++		if ((cpu == -1) || (cpu == rq->cpu))
++			break;
++
++		later_rq = cpu_rq(cpu);
++
++		/* Retry if something changed. */
++		if (double_lock_balance(rq, later_rq)) {
++			if (unlikely(task_rq(task) != rq ||
++				     !cpumask_test_cpu(later_rq->cpu, task->cpus_ptr) ||
++				     task_running(rq, task) ||
++				     !dl_task(task) ||
++				     !task_on_rq_queued(task))) {
++				double_unlock_balance(rq, later_rq);
++				later_rq = NULL;
++				break;
++			}
++		}
++		/*
++		 * If the rq we found has no -deadline task, or
++		 * its earliest one has a later deadline than our
++		 * task, the rq is a good one.
++		 */
++		if (will_core_overload_dl(rq, task))
++			break;
++
++		/* Otherwise we try again. */
++		double_unlock_balance(rq, later_rq);
++		later_rq = NULL;
++	}
++	return later_rq;
++}
++
+ static struct task_struct *pick_next_pushable_dl_task(struct rq *rq)
+ {
+ 	struct task_struct *p;
+-- 
+2.38.1
+
