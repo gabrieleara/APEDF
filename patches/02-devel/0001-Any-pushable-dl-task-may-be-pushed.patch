@@ -1,4 +1,4 @@
-From 2016b719fd266dcebde03c94855a5f7b28bdbcc8 Mon Sep 17 00:00:00 2001
+From d8259a4fdd0b9bb176d0a198d7aaa00dd671fd1e Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Wed, 16 Nov 2022 13:12:28 +0100
 Subject: Any pushable dl task may be pushed
@@ -8,7 +8,7 @@ Subject: Any pushable dl task may be pushed
  1 file changed, 114 insertions(+), 74 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 26c5c8200..445bec244 100644
+index 26c5c8200..b8320e9fd 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1246,8 +1246,12 @@ static void update_curr_dl(struct rq *rq)
@@ -18,7 +18,7 @@ index 26c5c8200..445bec244 100644
 -		if (unlikely(dl_se->dl_boosted || !start_dl_timer(curr)))
 +		if (unlikely(dl_se->dl_boosted || !start_dl_timer(curr))) {
  			enqueue_task_dl(rq, curr, ENQUEUE_REPLENISH);
-+			if (rq->dl.dl_bw > rq->dl.max_bw) {
++			if (rq->dl.this_bw > rq->dl.max_bw) {
 +				deadline_queue_push_tasks(rq);
 +			}
 +		}
@@ -36,7 +36,7 @@ index 26c5c8200..445bec244 100644
 +	if (on_dl_rq(&p->dl) && p->nr_cpus_allowed > 1) {
 +		enqueue_pushable_dl_task(rq, p);
 +
-+		if (rq->dl.dl_bw > rq->dl.max_bw) {
++		if (rq->dl.this_bw > rq->dl.max_bw) {
 +			deadline_queue_push_tasks(rq);
 +		}
 +	}
@@ -85,7 +85,7 @@ index 26c5c8200..445bec244 100644
 -	p = rb_entry(rq->dl.pushable_dl_tasks_root.rb_leftmost,
 -		     struct task_struct, pushable_dl_tasks);
 +static struct task_struct *pushable_dl_task_quick(struct rq *rq,
-+						  struct node *node)
++						  struct rb_node *node)
 +{
 +	return rb_entry(node, struct task_struct, pushable_dl_tasks);
 +}
@@ -100,7 +100,7 @@ index 26c5c8200..445bec244 100644
  	BUG_ON(!dl_task(p));
 +}
  
-+static struct task_struct *pushable_dl_task(struct rq *rq, struct node *node)
++static struct task_struct *pushable_dl_task(struct rq *rq, struct rb_node *node)
 +{
 +	struct task_struct *p = pushable_dl_task_quick(rq, node);
 +	pushable_dl_task_checkbugs(rq, p);
@@ -125,7 +125,7 @@ index 26c5c8200..445bec244 100644
 +				 int *trycount)
 +{
 +	if (node) {
-+		return node->next;
++		return rb_next(node);
 +	}
 +
 +	// Maximum number of re-tries from the beginning
