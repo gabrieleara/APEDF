@@ -63,6 +63,7 @@ EOF
         git checkout -B apedf-devel
     fi
 
+    # FIXME: add an option to check whether this patch should be applied or not
     # # Avoid applying if already applied
     # if ! [ $(git tag -l "energy-exynos") ]; then
     #     apply_energy_exynos

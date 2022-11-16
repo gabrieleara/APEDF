@@ -14,7 +14,7 @@ GIT_AM_CMD=(git am -3k --reject)
 function export_devel() {
     local tmpdir="$(mktemp -d)"
     git format-patch -k 'apedf-abeni' -o "$tmpdir"
-    rm -f "$PATCHES_DIR/02-devel/*"
+    rm -f "$PATCHES_DIR/02-devel/"*
     cp -a "$tmpdir"/* "$PATCHES_DIR/02-devel/"
     rm -rf "$tmpdir"
 }
