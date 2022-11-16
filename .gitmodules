@@ -1,0 +1,3 @@
+[submodule "apps/rt-app"]
+	path = apps/rt-app
+	url = git@github.com:gabrieleara/rt-app.git
