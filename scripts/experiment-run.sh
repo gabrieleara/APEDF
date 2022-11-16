@@ -39,7 +39,6 @@ function get_all_tsets() {
 (
     set -e
 
-    SCRIPT_PATH=$(get_script_path)
     source "$SCRIPT_PATH/util/cpufreq.sh"
     source "$SCRIPT_PATH/util/telegram-tokens.sh" 2>/dev/null || true
     source "$SCRIPT_PATH/util/telegram.sh"
@@ -67,7 +66,7 @@ function get_all_tsets() {
     DIR_IN="$1"
     DIR_OUT="$2"
 
-    APPS_DIR="./apps/"
+    APPS_DIR="$PROJ_PATH/apps/"
     LOG_LEVEL=10
 
     if [ $# -gt 2 ]; then

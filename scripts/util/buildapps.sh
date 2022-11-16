@@ -76,14 +76,14 @@ function usage() {
     SAMPLER_DIR="$APPS_DIR/power-sampler"
     RTAPP_DIR="$APPS_DIR/rt-app"
 
-    for arg in $@ ; do
+    for arg in "$@" ; do
         case "$arg" in
             cleanall)
-                clean_sampler
+                # clean_sampler
                 clean_rtapp
                 ;;
             sampler)
-                build_sampler
+                # build_sampler
                 ;;
             rtapp)
                 build_rtapp
