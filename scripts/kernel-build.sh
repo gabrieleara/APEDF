@@ -49,11 +49,15 @@ function main() {
 (
 	set -e
 
-	# export ARCH=arm
-	# export CROSS_COMPILE=arm-linux-gnueabi-
+	if [[ "$(uname -m)" == *"arm"* ]]; then
+		:
+	else
+		# export ARCH=arm
+		# export CROSS_COMPILE=arm-linux-gnueabi-
+		export ARCH=arm
+		export CROSS_COMPILE=arm-linux-gnu-
+	fi
 
-	export ARCH=arm
-	export CROSS_COMPILE=arm-linux-gnu-
 
 	main "$@"
 )
