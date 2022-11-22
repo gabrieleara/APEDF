@@ -69,7 +69,8 @@ To apply the patches on top of any kernel version, follow these steps:
     `kernel-odroid-5.4.y` with a shallow clone of the kernel:
 
 ```bash
-git clone --depth 1 --branch=odroid-5.4.y https://github.com/hardkernel/linux kernel-odroid-5.4.y
+git clone --depth 1 --branch=odroid-5.4.y \
+    https://github.com/hardkernel/linux kernel-odroid-5.4.y
 ```
 
  2. Whatever kernel you cloned, move to its directory (e.g., ``) and run the
