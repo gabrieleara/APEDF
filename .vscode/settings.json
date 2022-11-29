@@ -1,4 +1,5 @@
 {
     "editor.tabSize": 8,
     "editor.insertSpaces": false,
+    "explorer.excludeGitIgnore": true,
 }
