@@ -1,13 +1,13 @@
-#!/bin/sh
+#!/bin/bash
 
 usage() {
 	echo "
-Usage: $(basename ${0}) <options>
+Usage: ${SCRIPT_NAME} <options>
 
     --srcdir=PATH       - kernel source directory (default: current directory)
     --remote=REMOTE     - install on the remote host (requires sshfs)
-    --target=TARGET     - work with a kernel obtained through cross-compilation
-                          for TARGET (see below the list of supported targets)
+    --target=TARGET     - work with a kernel for TARGET (see below the list of
+                          supported targets)
 
     --skip-modules      - skips the step of installing the kernel modules
 
@@ -41,7 +41,7 @@ parse_args() {
 				SRCDIR=$2
 				shift
 			else
-				echo "$(basename ${0}): Error - '--srcdir' expects an argument"
+				echo "${SCRIPT_NAME}: Error - '--srcdir' expects an argument"
 				usage
 				return 1
 			fi
@@ -53,7 +53,7 @@ parse_args() {
 				REMOTE=$2
 				shift
 			else
-				echo "$(basename ${0}): Error - '--remote' expects an argument"
+				echo "${SCRIPT_NAME}: Error - '--remote' expects an argument"
 				usage
 				return 1
 			fi
@@ -65,7 +65,7 @@ parse_args() {
 				TARGET=$2
 				shift
 			else
-				echo "$(basename ${0}): Error - '--target' expects an argument"
+				echo "${SCRIPT_NAME}: Error - '--target' expects an argument"
 				usage
 				return 1
 			fi
@@ -74,7 +74,7 @@ parse_args() {
 			SKIP_MODULES=y
 			;;
 		*)
-			echo "$(basename ${0}): Error - ${1}"
+			echo "${SCRIPT_NAME}: Error - ${1}"
 			usage
 			exit 1
 			;;
@@ -85,7 +85,7 @@ parse_args() {
 
 check_target_supported() {
 	if [ -z "$TARGET" ]; then
-		echo "$(basename ${0}): Error - the '--target' is a required option!"
+		echo "${SCRIPT_NAME}: Error - the '--target' is a required option!"
 		usage
 		return 1
 	fi
@@ -94,7 +94,7 @@ check_target_supported() {
 	rpi4) ;;
 	odroidxu4) ;;
 	*)
-		echo "$(basename ${0}): Error - supplied target '$TARGET' is not supported!"
+		echo "${SCRIPT_NAME}: Error - supplied target '$TARGET' is not supported!"
 		usage
 		return 1
 		;;
@@ -103,7 +103,7 @@ check_target_supported() {
 
 check_srcdir() {
 	if ! [ -d "$SRCDIR" ]; then
-		echo "$(basename ${0}): Error - '$SRCDIR' is not a valid directory!"
+		echo "${SCRIPT_NAME}: Error - '$SRCDIR' is not a valid directory!"
 		usage
 		return 1
 	fi
@@ -145,7 +145,7 @@ cleanup() {
 		if umount "$DEST_DIR"; then
 			rmdir "$DEST_DIR"
 		else
-			echo "$(basename ${0}): Error - please umount and remove the $DEST_DIR  directory manually..."
+			echo "${SCRIPT_NAME}: Error - please umount and remove the $DEST_DIR  directory manually..."
 		fi
 
 		DEST_DIR=
@@ -153,6 +153,8 @@ cleanup() {
 }
 
 main() {
+	SCRIPT_NAME="$(basename "$0")"
+
 	parse_args "$@"
 	check_target_supported
 	check_srcdir
