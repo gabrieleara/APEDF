@@ -1,4 +1,4 @@
-From 310c2cb232252572071b434f4d9af486a12cc01b Mon Sep 17 00:00:00 2001
+From 9b7f611d2b38bd8d38312efa85de3e02c2367228 Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:19:17 +0000
 Subject: [PATCH 09/10] remove useless check
@@ -8,10 +8,10 @@ Subject: [PATCH 09/10] remove useless check
  1 file changed, 1 insertion(+), 6 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 541593b73..3d0dda2cb 100644
+index f55526e87..68024b9cc 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2276,12 +2276,7 @@ static void pull_dl_task(struct rq *this_rq)
+@@ -2371,12 +2371,7 @@ static void pull_dl_task(struct rq *this_rq)
   */
  static void task_woken_dl(struct rq *rq, struct task_struct *p)
  {

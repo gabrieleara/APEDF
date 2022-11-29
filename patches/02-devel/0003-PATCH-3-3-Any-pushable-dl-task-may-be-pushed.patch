@@ -1,29 +1,29 @@
-From 7d7438020c5d2d434fce1cf046c434982cdb2075 Mon Sep 17 00:00:00 2001
+From 806e46e2c9ff00b0570fd385ceb43f0f0c341027 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Thu, 24 Nov 2022 12:26:00 +0100
 Subject: [PATCH 3/3] Any pushable dl task may be pushed
 
 ---
- kernel/sched/deadline.c | 152 ++++++++++++++++++++++------------------
- 1 file changed, 85 insertions(+), 67 deletions(-)
+ kernel/sched/deadline.c | 151 +++++++++++++++++++++++-----------------
+ 1 file changed, 87 insertions(+), 64 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 2fdc9b862..a9331ee10 100644
+index 270cc0c54..47da96adb 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2194,102 +2194,120 @@ static void pushable_dl_task_checkbugs(struct rq *rq, struct task_struct *p)
+@@ -2197,102 +2197,125 @@ static void pushable_dl_task_checkbugs(struct rq *rq, struct task_struct *p)
  	BUG_ON(!dl_task(p));
  }
-
+ 
 -static struct task_struct *pick_next_pushable_dl_task(struct rq *rq)
-+static struct task_struct *pushable_dl_task(struct rq *rq, struct rb_node *node)
- {
+-{
 -	struct task_struct *p;
++static struct task_struct *pushable_dl_task(struct rq *rq, struct rb_node *node) {
 +	struct task_struct *p = pushable_dl_task_quick(rq, node);
 +	pushable_dl_task_checkbugs(rq, p);
 +	return p;
 +}
-
+ 
 -	if (!has_pushable_dl_tasks(rq))
 -		return NULL;
 +static struct rb_node *pushable_dl_find(struct rq *rq, struct task_struct *task)
@@ -39,7 +39,7 @@ index 2fdc9b862..a9331ee10 100644
 +	}
 +	return node;
 +}
-
+ 
 -	p = pushable_dl_task_quick(rq, pushable_dl_first(rq));
 +struct rb_node *pushable_dl_next(struct rq *rq, struct rb_node *node,
 +				 int *trycount)
@@ -47,19 +47,19 @@ index 2fdc9b862..a9331ee10 100644
 +	if (node) {
 +		return rb_next(node);
 +	}
-
+ 
 -	pushable_dl_task_checkbugs(rq, p);
 +	// Maximum number of re-tries from the beginning
 +	if (*trycount >= 3) {
 +		return NULL;
 +	}
-
+ 
 -	return p;
 +	// Start again from the beginning
 +	(*trycount)++;
 +	return pushable_dl_first(rq);
  }
-
+ 
  /*
 - * See if the non running -deadline tasks on this rq
 - * can be sent to some other CPU where they can preempt
@@ -82,9 +82,20 @@ index 2fdc9b862..a9331ee10 100644
 -		return 0;
 +	struct rb_node *node;
 +	int trycount = 0;
-
--	if (is_migration_disabled(next_task))
+ 
+ 	if (is_migration_disabled(next_task))
+ 		return 0;
+ 
+-	if (WARN_ON(next_task == rq->curr))
 -		return 0;
+-
+-	/* We might release rq lock */
+-retry:
+-	get_task_struct(next_task);
+-	later_rq = find_lock_later_rq_ff(next_task, rq);
+-	if (!later_rq) {
+-		if (rq->dl.this_bw < rq->dl.max_bw) {
+-			put_task_struct(next_task);
 +	/*
 +	 * This loop may start again from the beginning up to a fixed number of
 +	 * tries by setting node=NULL before getting the next one
@@ -92,37 +103,25 @@ index 2fdc9b862..a9331ee10 100644
 +	for (node = pushable_dl_first(rq); node;
 +	     node = pushable_dl_next(rq, node, &trycount)) {
 +		next_task = pushable_dl_task(rq, node);
-
--	if (WARN_ON(next_task == rq->curr))
--		return 0;
+ 
 +		/* Do we still WANT to push tasks? */
 +		if (rq->dl.this_bw <= rq->dl.max_bw) {
-+			return 0;
-+		}
-
--	/* We might release rq lock */
--retry:
--	get_task_struct(next_task);
-+		get_task_struct(next_task);
-
--	/* Will lock the rq it'll find */
--	later_rq = find_lock_later_rq_ff(next_task, rq);
--	if (!later_rq) {
--		if (rq->dl.this_bw < rq->dl.max_bw) {
-+		/* Will lock the rq it'll find */
-+		later_rq = find_lock_later_rq_ff(next_task, rq);
-+		/* Do we still WANT to push tasks? */
-+		if (rq->dl.this_bw <= rq->dl.max_bw) {
- 			put_task_struct(next_task);
--
  			return 0;
  		}
-
--		/* Will lock the rq it'll find */
+ 
++		get_task_struct(next_task);
++
+ 		/* Will lock the rq it'll find */
 -		later_rq = find_lock_later_rq(next_task, rq);
 -		if (!later_rq) {
 -			struct task_struct *task;
--
++		later_rq = find_lock_later_rq_ff(next_task, rq);
++		/* Do we still WANT to push tasks? */
++		if (rq->dl.this_bw <= rq->dl.max_bw) {
++			put_task_struct(next_task);
++			return 0;
++		}
+ 
 +		/*
 +		 * Since we had to release the lock to find later_rq, check
 +		 * whether the task is still there. Note that this may return a
@@ -160,7 +159,7 @@ index 2fdc9b862..a9331ee10 100644
 -
 -	deactivate_task(rq, next_task, 0);
 -	set_task_cpu(next_task, later_rq->cpu);
-
+-
 -	/*
 -	 * Update the later_rq clock here, because the clock is used
 -	 * by the cpufreq_update_util() inside __add_running_bw().
@@ -168,7 +167,7 @@ index 2fdc9b862..a9331ee10 100644
 -	update_rq_clock(later_rq);
 -	activate_task(later_rq, next_task, ENQUEUE_NOCLOCK);
 -	ret = 1;
--
+ 
 -	resched_curr(later_rq);
 +		/*
 +		 * Task is still in the list of pushable ones and it can be
@@ -176,7 +175,7 @@ index 2fdc9b862..a9331ee10 100644
 +		 */
 +		deactivate_task(rq, next_task, 0);
 +		set_task_cpu(next_task, later_rq->cpu);
-
+ 
 -	double_unlock_balance(rq, later_rq);
 +		/*
 +		 * Update the later_rq clock here, because the clock is used
@@ -185,19 +184,23 @@ index 2fdc9b862..a9331ee10 100644
 +		update_rq_clock(later_rq);
 +		activate_task(later_rq, next_task, ENQUEUE_NOCLOCK);
 +		resched_curr(later_rq);
-
+ 
 -out:
 -	put_task_struct(next_task);
 +		double_unlock_balance(rq, later_rq);
 +		put_task_struct(next_task);
 +		return 1;
 +	}
-
+ 
 -	return ret;
 +	/* We couldn't find tasks to push */
 +	return 0;
  }
-
+ 
++
  static void push_dl_tasks(struct rq *rq)
---
-2.37.2
+ {
+ 	/* push_dl_task() will return true if it moved a -deadline task */
+-- 
+2.38.1
+

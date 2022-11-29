@@ -1,4 +1,4 @@
-From 1537992f403b39571320db5449edd2dd891dbb36 Mon Sep 17 00:00:00 2001
+From 40f06d2f51a32ad854ac858131fd03ea212df720 Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:16:12 +0000
 Subject: [PATCH 06/10] Account for the cores' capacity in asymmetric systems
@@ -8,10 +8,10 @@ Subject: [PATCH 06/10] Account for the cores' capacity in asymmetric systems
  1 file changed, 1 insertion(+)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index f9e876364..642c7b99f 100644
+index 7c1be15a3..abe1253ec 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2563,6 +2563,7 @@ void init_dl_rq_bw_ratio(struct dl_rq *dl_rq)
+@@ -2672,6 +2672,7 @@ static void init_dl_rq_bw_ratio(struct dl_rq *dl_rq)
  						    global_rt_runtime());
  		dl_rq->max_bw   = to_ratio(global_rt_period(),
  						    global_rt_runtime());

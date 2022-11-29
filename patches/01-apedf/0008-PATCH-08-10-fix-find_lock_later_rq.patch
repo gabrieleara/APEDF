@@ -1,4 +1,4 @@
-From 7478959b214180dde010d90c432be5ae649c2186 Mon Sep 17 00:00:00 2001
+From f507b3a93f2d76782cb226491163446d2f76c5b6 Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:18:28 +0000
 Subject: [PATCH 08/10] fix find_lock_later_rq
@@ -9,10 +9,10 @@ The overload check must be on the selected rq, not on the current one!
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index f7f9eb388..541593b73 100644
+index 3dcd06aaf..f55526e87 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2072,7 +2072,7 @@ static struct rq *find_lock_later_rq_ff(struct task_struct *task, struct rq *rq)
+@@ -2153,7 +2153,7 @@ static struct rq *find_lock_later_rq_ff(struct task_struct *task, struct rq *rq)
  		 * its earliest one has a later deadline than our
  		 * task, the rq is a good one.
  		 */
