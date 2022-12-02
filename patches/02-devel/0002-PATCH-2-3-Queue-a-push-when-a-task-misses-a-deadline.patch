@@ -1,4 +1,4 @@
-From 5a90caaa7b5a1081c38cab0c611ae829809d80f4 Mon Sep 17 00:00:00 2001
+From ff71d332de8a28511925b1a2d97a9c3b4295db20 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Thu, 24 Nov 2022 12:04:21 +0100
 Subject: [PATCH 2/3] Queue a push when a task misses a deadline
@@ -27,5 +27,5 @@ index 53a10d8e3..270cc0c54 100644
  		if (!is_leftmost(curr, &rq->dl))
  			resched_curr(rq);
 -- 
-2.38.1
+2.25.1
 

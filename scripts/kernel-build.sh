@@ -41,7 +41,7 @@ parse_args() {
 			;;
 		-h | --help)
 			usage
-			return 0
+			return 1
 			;;
 		--srcdir*)
 			if echo $1 | grep '=' >/dev/null; then
@@ -98,7 +98,7 @@ check_target_supported() {
 
 	case "$TARGET" in
 	rpi4)
-		MAKETARGETS=(Image modules dtbs)
+		MAKETARGETS=(Image.gz modules dtbs)
 		;;
 	odroidxu4) ;;
 	notarget) ;;
@@ -216,7 +216,7 @@ main() {
 	cleanup
 
 	echo ""
-	echo " INSTALLED!"
+	echo " KERNEL BUILD SUCCESSFULLY!"
 	echo ""
 }
 

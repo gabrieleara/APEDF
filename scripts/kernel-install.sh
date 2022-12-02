@@ -32,7 +32,7 @@ parse_args() {
 			;;
 		-h | --help)
 			usage
-			return 0
+			return 1
 			;;
 		--srcdir*)
 			if echo $1 | grep '=' >/dev/null; then

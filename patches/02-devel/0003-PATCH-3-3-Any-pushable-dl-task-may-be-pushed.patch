@@ -1,4 +1,4 @@
-From 806e46e2c9ff00b0570fd385ceb43f0f0c341027 Mon Sep 17 00:00:00 2001
+From 40e6bf204b353f6a8f8935441dbbc140c4e41c69 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Thu, 24 Nov 2022 12:26:00 +0100
 Subject: [PATCH 3/3] Any pushable dl task may be pushed
@@ -202,5 +202,5 @@ index 270cc0c54..47da96adb 100644
  {
  	/* push_dl_task() will return true if it moved a -deadline task */
 -- 
-2.38.1
+2.25.1
 
