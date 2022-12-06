@@ -82,7 +82,7 @@ parse_args() {
 		*)
 			echo "${SCRIPT_NAME}: Error - ${1}"
 			usage
-			exit 1
+			return 1
 			;;
 		esac
 		shift

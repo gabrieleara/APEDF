@@ -135,3 +135,173 @@ install) for the SSH password by `sshfs` if necessary.
 
 To install a kernel locally (i.e. on your local machine), simply do not provide
 the `--remote` option (dangerous!).
+
+# Running experiments
+
+## Installing dependencies
+
+Dependencies of the tests can be installed using the following line:
+```bash
+apt-get install -y \
+	rsync \
+	cpufrequtils \
+	lm-sensors \
+	automake \
+	git \
+	libtool \
+	libjson-c-dev
+```
+
+## Copying the project on the target
+
+You can clone the project on the target machine of course, but if you work on a
+computer you might prefer to simply copy all the files on the target instead
+after making your changes.
+
+To do so, you can use `rsync` from the root of the project like so:
+```bash
+rsync -aviz "$PWD" root@REMOTE_HOST: \
+	--include='**.gitignore' \
+	--exclude='/.git' \
+	--filter=':- .gitignore' \
+	--delete-after
+```
+where REMOTE_HOST is the address of the target machine (requires `rsync`
+installed on the target).
+
+We use the `root` user now for reasons that will become clear in a moment.
+
+## Other Prerequisites for running the experiments
+
+While being not strictly mandatory, we recommend stopping all unwanted processes
+on the target host before running experiments.
+
+> For now, no power measurements are made during experiments, however, doing
+> this step would be very beneficial if we were doing power measurements.
+
+To do so, you can leverage the `rescue-ssh` systemctl target, present on typical
+debian distribution, which shuts off all services except the SSH server. To do so, run
+```bash
+systemctl isolate rescue-ssh
+```
+
+The following is the list of processes (excluding kernel threads) running on a
+RPI4 target after isolating the given target:
+```txt
+echo q | htop -C -t | tail -n +2
+
+    0[                         0.0% 1000MHz 41°C]   Tasks: 12, 1 thr; 1 running
+    1[                         0.0% 1000MHz 41°C]   Load average: 0.02 0.03 0.00
+    2[                         0.0% 1000MHz 41°C]   Uptime: 00:02:48
+    3[                         0.0% 1000MHz 41°C]
+  Mem[|#*                            69.6M/3.71G]
+  Swp[                                     0K/0K]
+
+    PID△USER      PRI  NI  VIRT   RES   SHR S CPU% MEM%   TIME+  Command
+      1 root       20   0  161M 10400  7460 S  0.0  0.3  0:03.14 /sbin/init
+    145 root       20   0 32728 12472 11560 S  0.0  0.3  0:00.79 ├─ /lib/systemd/systemd-journald
+    167 root       20   0 21620  6032  3828 S  0.0  0.2  0:00.66 ├─ /lib/systemd/systemd-udevd
+    322 systemd-t  20   0 88108  5980  5248 S  0.0  0.2  0:00.31 ├─ /lib/systemd/systemd-timesyncd
+    359 systemd-t  20   0 88108  5980  5248 S  0.0  0.2  0:00.01 │  └─ sd-resolve
+    501 root       20   0  5476  1460  1356 S  0.0  0.0  0:00.00 ├─ /sbin/agetty -o -p -- \u --noclear t
+    529 root       20   0 13652  6404  5536 S  0.0  0.2  0:00.03 ├─ sshd: /usr/sbin/sshd -D [listener] 0
+    599 root       20   0 16072  7776  6568 S  0.0  0.2  0:00.40 │  └─ sshd: root@pts/0
+    620 root       20   0  9840  4528  3012 S  0.0  0.1  0:00.11 │     └─ -bash
+    702 root       20   0  8352  3668  2656 R  0.0  0.1  0:00.05 │        ├─ htop -C -t
+    703 root       20   0  6860   508   444 S  0.0  0.0  0:00.00 │        └─ tail -c +2
+    602 root       20   0 15916  7616  6444 S  0.0  0.2  0:00.13 └─ /lib/systemd/systemd --user
+    603 root       20   0 95344  4664  1660 S  0.0  0.1  0:00.00    └─ (sd-pam)
+
+```
+
+> Side effect of this systemctl target is that only root is granted access to
+> the machine via SSH when in this mode. You can bypass this problem by changing
+> the content of some files, but it is easier to connect via root (and the
+> script to run the experiments will have to be executed using sudo anyway!).
+
+To get back to the original set of services running after you are done with
+experiments, run
+```bash
+systemctl isolate $(systemctl get-default)
+```
+
+## Running the experiments
+
+The project contains a `tasksets` directory, which contains a set of
+automatically generated tasksets. These tasksets differentiate depending on:
+ - number of tasks in the set (6, 8, 12, 16)
+ - system uilization (from 1.0 to 3.6)
+
+For each of these combinations (85), 10 unique tasksets are generated, for a
+total of 850 tasksets. Different tasksets can be generated using an automated
+script (instruction will follow in another commit).
+
+The script that will run the experiments is in `scripts/tasks-run.sh`, which
+accepts a variety of options:
+```txt
+./scripts/tasks-run.sh --help
+
+Usage: tasks-run.sh <options>
+
+    --skipbuild         - skips the build of the apps (e.g., rtapp)
+    --printlist         - print the full ordered list of tasksets
+
+    --tasksdir=TASKSDIR - the directory where to look for tasksets; it will
+                          look only for tasksets in that directory, meaning
+                          no subdirectories!
+                          (default = CWD)
+    --outdir=OUTDIR     - the directory where to put all output files
+                          (default = CWD/out)
+    --loglevel=LOGLEVEL - the log level to use when running rt-app
+                          (default = 10)
+    --rtlimit=RTLIMIT   - value to write in 'kernel.sched_rt_runtime_us'; use -1
+                          to disable the runtime limit for rt apps
+                          (default: no value will be written)
+    --cooldown=SECONDS  - time to sleep for in-between runs for cooldown
+                          (default: 90s)
+    --maxfreq=MAXFREQ   - maximum frequency to set (using 'performance'
+                          governor), value expressed either in Hz or by using
+                          unit suffixes (e.g., 1.4GHz); by default, the maximum
+                          frequency accepted by core 0 is used
+                          (in this case, 1500000 HZ)
+
+    -h --help           - show this help message and exit
+    --debug             - run this program in debug mode
+
+```
+
+The default options should be fine. If you installed all dependencies, running
+the script with default options will build from sources `rt-app`, select the
+maximum frequency the CPU can run at and the `performance` CPUFreq governor, and
+it will then start running each taskset one by one.
+
+Experiments are executed by increasing number of tasks and decreasing value for
+utilization. Use `--printlist` to see the order in which experiments will be
+executed.
+
+I suggest using at least option `--tasksdir` to select the `tasksets` directory,
+like so:
+```bash
+./APEDF/scripts/tasks-run.sh --tasksdir tasksets
+```
+
+Output will be something like this (on RPI4):
+```txt
+ + Re-building apps (just in case) ...
+ + clean rtapp...
+ + build rtapp
+ ... <omitted output of automake>
+ + setting maximum frequency and governor...
+ + advertised frequency configuration:
+          minimum CPU frequency  -  maximum CPU frequency  -  governor
+CPU  0       600000 kHz ( 40 %)  -    1500000 kHz (100 %)  -  performance
+CPU  1       600000 kHz ( 40 %)  -    1500000 kHz (100 %)  -  performance
+CPU  2       600000 kHz ( 40 %)  -    1500000 kHz (100 %)  -  performance
+CPU  3       600000 kHz ( 40 %)  -    1500000 kHz (100 %)  -  performance
+
+ + Starting tests...
+
+ + Running test [001/850] defined in /root/APEDF/tasksets/ts_n06_i00_u1.0000.json ...
+ + Running test [002/850] defined in /root/APEDF/tasksets/ts_n06_i01_u1.0000.json ...
+ ...<other experiments will follow>
+```
