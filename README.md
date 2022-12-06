@@ -282,7 +282,7 @@ executed.
 I suggest using at least option `--tasksdir` to select the `tasksets` directory,
 like so:
 ```bash
-./APEDF/scripts/tasks-run.sh --tasksdir tasksets
+./scripts/tasks-run.sh --tasksdir tasksets
 ```
 
 Output will be something like this (on RPI4):
