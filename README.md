@@ -263,7 +263,7 @@ Usage: tasks-run.sh <options>
                           governor), value expressed either in Hz or by using
                           unit suffixes (e.g., 1.4GHz); by default, the maximum
                           frequency accepted by core 0 is used
-                          (in this case, 1500000 HZ)
+                          (in this case, 1500000 kHZ)
 
     -h --help           - show this help message and exit
     --debug             - run this program in debug mode
