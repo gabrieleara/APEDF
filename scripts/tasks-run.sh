@@ -32,7 +32,7 @@ Usage: ${SCRIPT_NAME} <options>
                           governor), value expressed either in Hz or by using
                           unit suffixes (e.g., 1.4GHz); by default, the maximum
                           frequency accepted by core 0 is used
-                          (in this case, $MAX_FREQ_DEFAULT HZ)
+                          (in this case, $MAX_FREQ_DEFAULT kHZ)
 
     -h --help           - show this help message and exit
     --debug             - run this program in debug mode
