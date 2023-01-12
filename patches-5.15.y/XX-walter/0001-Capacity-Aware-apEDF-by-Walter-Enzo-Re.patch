@@ -1,0 +1,282 @@
+From b576e9ccaaaa285234c0ad1165d977115699c1d4 Mon Sep 17 00:00:00 2001
+From: Gabriele Ara <gabriele.ara@santannapisa.it>
+Date: Thu, 18 Nov 2021 15:03:47 +0100
+Subject: Capacity-Aware apEDF by Walter Enzo Re
+
+---
+ include/linux/sched.h   |   5 ++
+ kernel/sched/deadline.c | 115 +++++++++++++++++++++++++++++-----------
+ kernel/sched/topology.c |   3 ++
+ 3 files changed, 93 insertions(+), 30 deletions(-)
+
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index afee5d5eb..a3f9c0688 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -563,6 +563,11 @@ struct sched_dl_entity {
+ 	 * time.
+ 	 */
+ 	struct hrtimer inactive_timer;
++
++	/*
++	 * Counter for apEDF algorithm
++	 */
++	uint8_t ap_cnt;
+ };
+ 
+ #ifdef CONFIG_UCLAMP_TASK
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index 26c5c8200..be31a9d3d 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -18,6 +18,13 @@
+ #include "sched.h"
+ #include "pelt.h"
+ 
++
++/*
++*	Defining the overload functions
++*/
++static bool is_core_overload_dl(struct rq *rq);
++static bool will_core_overload_dl(struct rq *rq, struct task_struct* p);
++
+ struct dl_bandwidth def_dl_bandwidth;
+ 
+ static inline struct task_struct *dl_task_of(struct sched_dl_entity *dl_se)
+@@ -438,6 +445,54 @@ static void dec_dl_migration(struct sched_dl_entity *dl_se, struct dl_rq *dl_rq)
+ 	update_dl_migration(dl_rq);
+ }
+ 
++/*
++*	The rq->dl.dl_nr_running > 0 in the else part makes overload only rq that has more than 1 tasks inside:
++*	since a waking task is not counted as running task, so a dl_nr_running == 0 means there is only 1 task inside.
++*/
++static bool is_core_overload_dl(struct rq *rq)
++{
++	if (arch_scale_cpu_capacity(rq->cpu) < 1024)   	// little core
++	{
++		if (rq->dl.this_bw > rq->dl.max_bw)
++			return true;
++		else
++			return false;
++	}
++	else											// big core
++	{
++		if ( rq->dl.this_bw > rq->dl.max_bw && rq->dl.dl_nr_running > 0 ) {
++			if (rq->dl.dl_nr_running == 1 && rq->dl.this_bw == rq->dl.running_bw) // There is only 1 task very big
++				return false;
++			else
++				return true;
++		}
++		else
++			return false;
++	}
++}
++
++/*
++*	Since it is called once when task are not marked as running, not need the check on nr_running == 1 as in the previous function
++*/
++static bool will_core_overload_dl(struct rq *rq, struct task_struct* p)
++{
++	if (arch_scale_cpu_capacity(rq->cpu) < 1024)   // little core
++	{
++		if (rq->dl.this_bw + p->dl.dl_bw > rq->dl.max_bw)
++			return true;
++		else
++			return false;
++	}
++	else						// big core
++	{
++		if ((rq->dl.this_bw + p->dl.dl_bw > rq->dl.max_bw) && (rq->dl.dl_nr_running > 0))
++			return true;
++		else
++			return false;
++	}
++}
++
++
+ /*
+  * The list of pushable -deadline task is not a plist, like in
+  * sched_rt.c, it is an rb-tree with tasks ordered by deadline.
+@@ -1059,7 +1114,7 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
+ 	 * Queueing this task back might have overloaded rq, check if we need
+ 	 * to kick someone away.
+ 	 */
+-	if (rq->dl.this_bw > rq->dl.max_bw && has_pushable_dl_tasks(rq)) {
++	if (is_core_overload_dl(rq) && has_pushable_dl_tasks(rq)) {
+ 		/*
+ 		 * Nothing relies on rq->lock after this, so its safe to drop
+ 		 * rq->lock.
+@@ -1599,11 +1654,11 @@ static void yield_task_dl(struct rq *rq)
+ #ifdef CONFIG_SMP
+ 
+ static int find_later_rq(struct task_struct *task);
+-static int find_later_rq_ff(struct task_struct *task);
++static int find_later_rq_ff(struct task_struct *task, int prev_cpu);
+ 
+ /* Only try algorithms three times */
+ #define DL_MAX_TRIES 3
+-
++#define CONV_COUNT 10
+ static int
+ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
+ {
+@@ -1620,24 +1675,23 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
+ 		goto out;
+ 	}
+ 
++	/*
++	* 	Check if the queue can schedule the task; or balanced status is reaching; or current task is a big cluster and shuld be migrated into little one
++	*/
++	if ( (is_core_overload_dl(rq)) || p->dl.ap_cnt < CONV_COUNT || ((p->dl.dl_bw < cpu_rq(0)->dl.max_bw) && (1024 == arch_scale_cpu_capacity(cpu))) ){
+ 	rcu_read_lock();
++
++	if(p->dl.ap_cnt < CONV_COUNT)
++		p->dl.ap_cnt++;
++
+ 	/* Try FF --- We are being optimistic, here! */
+-	target = find_later_rq_ff(p);
+-	if (target >= 0) {
++	target = find_later_rq_ff(p, cpu);
++	if (target >= 0)
+ 		cpu = target;
+-#if 0
+-	} else if (rq->dl.this_bw > rq->dl.max_bw) {
+-		/* FF did not work: Try gEDF */
+-		target = find_later_rq(p);
+-		if (target >= 0 &&
+-			(dl_time_before(p->dl.deadline, cpu_rq(target)->dl.earliest_dl.curr) ||
+-			(cpu_rq(target)->dl.dl_nr_running == 0))) {
+-				cpu = target;
+-		}
+-#endif
+-	}
+-	rcu_read_unlock();
+ 
++
++	rcu_read_unlock();
++	}
+ out:
+ 	return cpu;
+ }
+@@ -1763,7 +1817,7 @@ static void set_next_task_dl(struct rq *rq, struct task_struct *p, bool first)
+ 	if (rq->curr->sched_class != &dl_sched_class)
+ 		update_dl_rq_load_avg(rq_clock_pelt(rq), rq, 0);
+ 
+-	if (rq->dl.this_bw > rq->dl.max_bw) deadline_queue_push_tasks(rq);
++	if (is_core_overload_dl(rq)) deadline_queue_push_tasks(rq);
+ }
+ 
+ static struct sched_dl_entity *pick_next_dl_entity(struct rq *rq,
+@@ -1965,7 +2019,7 @@ static int find_later_rq(struct task_struct *task)
+ 	return -1;
+ }
+ 
+-static int find_later_rq_ff(struct task_struct *task)
++static int find_later_rq_ff(struct task_struct *task, int prev_cpu)
+ {
+ 	struct root_domain *rd = task_rq(task)->rd;
+ 	int i;
+@@ -1976,7 +2030,9 @@ static int find_later_rq_ff(struct task_struct *task)
+ 		struct rq *rq = cpu_rq(i);
+ 		u64 added_bw = i == task_cpu(task) ? 0 : task->dl.dl_bw;
+ 
+-		if (cpumask_test_cpu(i, task->cpus_ptr) && (rq->dl.this_bw + added_bw < rq->dl.max_bw)) {
++		if ( (cpumask_test_cpu(i, task->cpus_ptr) && (rq->dl.this_bw + added_bw <= rq->dl.max_bw)) ||           // Pin big task to a big CPU
++					( is_core_overload_dl(cpu_rq(prev_cpu)) && (arch_scale_cpu_capacity(i) == 1024) &&
++								(rq->dl.this_bw == 0) && (task->dl.dl_bw > cpu_rq(4)->dl.max_bw ) ) ) {
+ 			return i;
+ 		}
+ 	}
+@@ -2049,7 +2105,7 @@ static struct rq *find_lock_later_rq_ff(struct task_struct *task, struct rq *rq)
+ 	int cpu;
+ 
+ 	for (tries = 0; tries < DL_MAX_TRIES; tries++) {
+-		cpu = find_later_rq_ff(task);
++		cpu = find_later_rq_ff(task, rq->cpu);
+ 
+ 		if ((cpu == -1) || (cpu == rq->cpu))
+ 			break;
+@@ -2074,7 +2130,7 @@ static struct rq *find_lock_later_rq_ff(struct task_struct *task, struct rq *rq)
+ 		 * its earliest one has a later deadline than our
+ 		 * task, the rq is a good one.
+ 		 */
+-		if (later_rq->dl.this_bw + task->dl.dl_bw < later_rq->dl.max_bw)
++		if (will_core_overload_dl(rq, task))
+ 			break;
+ 
+ 		/* Otherwise we try again. */
+@@ -2112,6 +2168,9 @@ static struct task_struct *pick_next_pushable_dl_task(struct rq *rq)
+  */
+ static int push_dl_task(struct rq *rq)
+ {
++	if (!(is_core_overload_dl(rq)))
++			return 0;
++
+ 	struct task_struct *next_task;
+ 	struct rq *later_rq = NULL;
+ 	int ret = 0;
+@@ -2120,19 +2179,14 @@ static int push_dl_task(struct rq *rq)
+ 	if (!next_task)
+ 		return 0;
+ 
++retry:
+ 	if (WARN_ON(next_task == rq->curr))
+ 		return 0;
+ 
+ 	/* We might release rq lock */
+-retry:
+ 	get_task_struct(next_task);
+ 	later_rq = find_lock_later_rq_ff(next_task, rq);
+ 	if (!later_rq) {
+-		if (rq->dl.this_bw < rq->dl.max_bw) {
+-			put_task_struct(next_task);
+-
+-			return 0;
+-		}
+ 
+ 		/* Will lock the rq it'll find */
+ 		later_rq = find_lock_later_rq(next_task, rq);
+@@ -2278,7 +2332,7 @@ static void pull_dl_task(struct rq *this_rq)
+  */
+ static void task_woken_dl(struct rq *rq, struct task_struct *p)
+ {
+-	if (rq->dl.this_bw > rq->dl.max_bw) {
++	if (is_core_overload_dl(rq)) {
+ 		push_dl_tasks(rq);
+ 	}
+ }
+@@ -2432,6 +2486,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
+ 	if (hrtimer_try_to_cancel(&p->dl.inactive_timer) == 1)
+ 		put_task_struct(p);
+ 
++	p->dl.ap_cnt = 0;
+ 	/* If p is not queued we will update its parameters at next wakeup. */
+ 	if (!task_on_rq_queued(p)) {
+ 		add_rq_bw(&p->dl, &rq->dl);
+@@ -2441,7 +2496,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
+ 
+ 	if (rq->curr != p) {
+ #ifdef CONFIG_SMP
+-		if (rq->dl.this_bw > rq->dl.max_bw)
++		if (is_core_overload_dl(rq))
+ 			deadline_queue_push_tasks(rq);
+ #endif
+ 		if (dl_task(rq->curr))
+diff --git a/kernel/sched/topology.c b/kernel/sched/topology.c
+index ffaa97a8d..79afc4097 100644
+--- a/kernel/sched/topology.c
++++ b/kernel/sched/topology.c
+@@ -361,6 +361,9 @@ static bool build_perf_domains(const struct cpumask *cpu_map)
+ 	}
+ 
+ 	for_each_cpu(i, cpu_map) {
++		cpu_rq(i)->dl.max_bw = to_ratio(global_rt_period(), global_rt_runtime());
++		cpu_rq(i)->dl.max_bw = cpu_rq(i)->dl.max_bw * arch_scale_cpu_capacity(i) >> SCHED_CAPACITY_SHIFT;
++
+ 		/* Skip already covered CPUs. */
+ 		if (find_pd(pd, i))
+ 			continue;
+-- 
+2.38.1
+

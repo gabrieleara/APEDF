@@ -1,4 +1,4 @@
-From 40f5b3c87798121ce6505d7b8cac5e7a709d5115 Mon Sep 17 00:00:00 2001
+From 8672fd3dde4fbbce7713f52b8a264c7a970cdc95 Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Sat, 26 Nov 2022 11:15:32 +0100
 Subject: [PATCH 2/2] Try to fix the "migrate on unthrottling" case
@@ -13,10 +13,10 @@ ONLY BUILD-TESTED!
  1 file changed, 11 insertions(+), 20 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 24736df6f..247c9058a 100644
+index edaaa1d7743b..15932d8b3824 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -1024,6 +1024,8 @@ static int start_dl_timer(struct task_struct *p)
+@@ -981,6 +981,8 @@ static int start_dl_timer(struct task_struct *p)
  	return 1;
  }
  
@@ -25,7 +25,7 @@ index 24736df6f..247c9058a 100644
  /*
   * This is the bandwidth enforcement timer callback. If here, we know
   * a task is not on its dl_rq, since the fact that the timer was running
-@@ -1045,8 +1047,15 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
+@@ -1002,8 +1004,15 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
  	struct task_struct *p = dl_task_of(dl_se);
  	struct rq_flags rf;
  	struct rq *rq;
@@ -42,7 +42,7 @@ index 24736df6f..247c9058a 100644
  
  	/*
  	 * The task might have changed its scheduling policy to something
-@@ -1116,22 +1125,6 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
+@@ -1073,22 +1082,6 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
  	else
  		resched_curr(rq);
  
@@ -65,12 +65,12 @@ index 24736df6f..247c9058a 100644
  unlock:
  	task_rq_unlock(rq, p, &rf);
  
-@@ -1689,9 +1682,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int flags)
+@@ -1648,9 +1641,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
  {
  	struct task_struct *curr;
  	struct rq *rq;
 -
--	if (!(flags & WF_TTWU))
+-	if (sd_flag != SD_BALANCE_WAKE)
 -		goto out;
 +	int target;
  

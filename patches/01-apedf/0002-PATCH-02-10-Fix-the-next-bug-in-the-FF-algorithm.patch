@@ -1,4 +1,4 @@
-From f56dbfc7bb78b022f839362e4091e4ba0dbdc8e8 Mon Sep 17 00:00:00 2001
+From 6eb62fb349ea6585d8e1abb45d4edb99f6912f4e Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:10:04 +0000
 Subject: [PATCH 02/10] Fix the next bug, in the FF algorithm
@@ -11,10 +11,10 @@ See Test4
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 38d218f53..d9686f8ec 100644
+index 8150dc2c5dc9..28675602869c 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2051,8 +2051,9 @@ static int find_later_rq_ff(struct task_struct *task)
+@@ -2001,8 +2001,9 @@ static int find_later_rq_ff(struct task_struct *task)
  			 "sched RCU must be held");
  	for_each_cpu_and(i, rd->span, cpu_active_mask) {
  		struct rq *rq = cpu_rq(i);

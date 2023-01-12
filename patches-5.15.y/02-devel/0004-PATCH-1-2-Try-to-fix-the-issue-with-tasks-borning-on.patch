@@ -1,0 +1,87 @@
+From 4815a9eb2d64a5662593fc2ed43266fc7faa1f1e Mon Sep 17 00:00:00 2001
+From: luca abeni <luca.abeni@santannapisa.it>
+Date: Sat, 26 Nov 2022 11:02:21 +0100
+Subject: [PATCH 1/2] Try to fix the issue with tasks "borning" on the wrong
+ CPU core
+
+The apEDF FF heuristic would like to start tasks on core 0
+whenever possible (if there are no overloads).
+Unfortunately, a task can switch to SCHED_DEADLINE when executing
+on a different CPU core, so try to migrate it at its next wakeup.
+---
+ include/linux/sched.h   |  4 ++++
+ kernel/sched/deadline.c | 10 +++++++++-
+ 2 files changed, 13 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index e418935f8..812342dce 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -626,11 +626,15 @@ struct sched_dl_entity {
+ 	 *
+ 	 * @dl_overrun tells if the task asked to be informed about runtime
+ 	 * overruns.
++	 *
++	 * @dl_new tells if the task is a new SCHED_DEADLINE task, and did
++	 * not get any chance to migrate yet.
+ 	 */
+ 	unsigned int			dl_throttled      : 1;
+ 	unsigned int			dl_yielded        : 1;
+ 	unsigned int			dl_non_contending : 1;
+ 	unsigned int			dl_overrun	  : 1;
++	unsigned int			dl_new		  : 1;
+ 
+ 	/*
+ 	 * Bandwidth enforcement timer. Each -deadline task has its
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index 47da96adb..24736df6f 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1701,6 +1701,11 @@ select_task_rq_dl(struct task_struct *p, int cpu, int flags)
+ 	}
+ 
+ 	rcu_read_lock();
++
++	if (rq->dl.this_bw <= rq->dl.max_bw && p->dl.dl_new == 0) {
++		goto out1;
++	}
++	p->dl.dl_new = 0;
+ 	/* Try FF --- We are being optimistic, here! */
+ 	target = find_later_rq_ff(p);
+ 	if (target >= 0) {
+@@ -1716,6 +1721,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int flags)
+ 		}
+ #endif
+ 	}
++out1:
+ 	rcu_read_unlock();
+ 
+ out:
+@@ -2261,7 +2267,7 @@ static int push_dl_task(struct rq *rq)
+ 		next_task = pushable_dl_task(rq, node);
+ 
+ 		/* Do we still WANT to push tasks? */
+-		if (rq->dl.this_bw <= rq->dl.max_bw) {
++		if (rq->dl.this_bw <= rq->dl.max_bw && next_task->dl.dl_new == 0) {
+ 			return 0;
+ 		}
+ 
+@@ -2307,6 +2313,7 @@ static int push_dl_task(struct rq *rq)
+ 		resched_curr(later_rq);
+ 
+ 		double_unlock_balance(rq, later_rq);
++		next_task->dl.dl_new = 0;
+ 		put_task_struct(next_task);
+ 		return 1;
+ 	}
+@@ -2586,6 +2593,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
+ 		return;
+ 	}
+ 
++	p->dl.dl_new = 1;
+ 	if (rq->curr != p) {
+ #ifdef CONFIG_SMP
+ 		if (rq->dl.this_bw > rq->dl.max_bw)
+-- 
+2.25.1
+

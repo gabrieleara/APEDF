@@ -1,0 +1,45 @@
+From 1efaeddc897a827a453e94c3f8f6c7ae82c804c9 Mon Sep 17 00:00:00 2001
+From: luca abeni <luca.abeni@santannapisa.it>
+Date: Thu, 18 Nov 2021 13:20:28 +0000
+Subject: [PATCH 10/10] Misc fixes
+
+---
+ kernel/sched/deadline.c | 8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index 68024b9cc..01f919f2a 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1528,6 +1528,10 @@ static void dequeue_dl_entity(struct sched_dl_entity *dl_se)
+ 
+ static void enqueue_task_dl(struct rq *rq, struct task_struct *p, int flags)
+ {
++	struct task_struct *pi_task = rt_mutex_get_top_task(p);
++	struct sched_dl_entity *pi_se = &p->dl;
++	bool contending;
++
+ 	if (is_dl_boosted(&p->dl)) {
+ 		/*
+ 		 * Because of delays in the detection of the overrun of a
+@@ -1568,6 +1572,8 @@ static void enqueue_task_dl(struct rq *rq, struct task_struct *p, int flags)
+ 		return;
+ 	}
+ 
++	contending = ((pi_se->dl_non_contending == 0) && (flags & ENQUEUE_WAKEUP)) || (flags & ENQUEUE_REPLENISH);
++
+ 	/*
+ 	 * Check if a constrained deadline task was activated
+ 	 * after the deadline but before the next period.
+@@ -1603,7 +1609,7 @@ static void enqueue_task_dl(struct rq *rq, struct task_struct *p, int flags)
+ 
+ 	enqueue_dl_entity(&p->dl, flags);
+ 
+-	if (!task_current(rq, p) && p->nr_cpus_allowed > 1)
++	if (!task_current(rq, p) && p->nr_cpus_allowed > 1 && contending)
+ 		enqueue_pushable_dl_task(rq, p);
+ }
+ 
+-- 
+2.25.1
+

@@ -1,0 +1,240 @@
+From 1ea827eb7fe111c7a5550c1d98b08b20e50ecc79 Mon Sep 17 00:00:00 2001
+From: Gabriele Ara <gabriele.ara@santannapisa.it>
+Date: Thu, 18 Nov 2021 15:10:07 +0100
+Subject: ARM AES + apEDF by Walter Enzo Re
+
+---
+ kernel/sched/deadline.c | 189 +++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 187 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index be31a9d3d..2b6405411 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1656,6 +1656,12 @@ static void yield_task_dl(struct rq *rq)
+ static int find_later_rq(struct task_struct *task);
+ static int find_later_rq_ff(struct task_struct *task, int prev_cpu);
+ 
++/* EAS ARM implementation functions*/
++static long compute_energy(struct task_struct *p, int dst_cpu, struct perf_domain *pd);
++static int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu);
++static struct rq *find_lock_energy_rq(struct task_struct *task, struct rq *rq, int prev_cpu);
++
++
+ /* Only try algorithms three times */
+ #define DL_MAX_TRIES 3
+ #define CONV_COUNT 10
+@@ -1685,7 +1691,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
+ 		p->dl.ap_cnt++;
+ 
+ 	/* Try FF --- We are being optimistic, here! */
+-	target = find_later_rq_ff(p, cpu);
++	target = find_energy_efficient_cpu(p, cpu);
+ 	if (target >= 0)
+ 		cpu = target;
+ 
+@@ -1932,6 +1938,141 @@ static struct task_struct *pick_earliest_pushable_dl_task(struct rq *rq, int cpu
+ 
+ static DEFINE_PER_CPU(cpumask_var_t, local_cpu_mask_dl);
+ 
++
++/* EAS FUNCTIONS*/
++
++static long
++compute_energy(struct task_struct *p, int dst_cpu, struct perf_domain *pd)
++{
++	struct cpumask *pd_mask = perf_domain_span(pd);
++	unsigned long long max_util = 0, sum_util = 0;
++	int cpu;
++
++	/*
++	 * The capacity state of CPUs of the current rd can be driven by CPUs
++	 * of another rd if they belong to the same pd. So, account for the
++	 * utilization of these CPUs too by masking pd with cpu_online_mask
++	 * instead of the rd span.
++	 *
++	 * If an entire pd is outside of the current rd, it will not appear in
++	 * its pd list and will not be accounted by compute_energy().
++	 */
++	for_each_cpu_and(cpu, pd_mask, cpu_online_mask) {
++		unsigned long long util_dl;
++
++		util_dl = cpu_rq(cpu)->dl.this_bw;
++		if ((cpu == task_cpu(p) && cpu != dst_cpu)) {
++			util_dl -= p->dl.dl_bw;
++		}
++		if ((cpu != task_cpu(p) && cpu == dst_cpu)) {
++			util_dl += p->dl.dl_bw;
++		}
++		/* TODO: Consider cpu_cap (or current frequency) when computing sum_util? */
++		sum_util += util_dl;
++		max_util = max(max_util, util_dl);
++	}
++
++	return em_pd_energy(pd->em_pd, max_util, sum_util);
++}
++
++static int find_energy_efficient_cpu(struct task_struct *p, int prev_cpu)
++{
++	unsigned long prev_delta = ULONG_MAX, best_delta = ULONG_MAX;
++	struct root_domain *rd = cpu_rq(smp_processor_id())->rd;
++	unsigned long long util;
++	unsigned long max_cap, base_energy;
++	unsigned long bw;
++	int cpu, best_energy_cpu = prev_cpu;
++	struct sched_domain *sd;
++	struct perf_domain *pd;
++
++	rcu_read_lock();
++	pd = rcu_dereference(rd->pd);
++	if (!pd) {
++		rcu_read_unlock();
++		printk_deferred("No performance domain found \n");
++		return find_later_rq_ff(p, prev_cpu);
++	}
++
++	/*
++	 * Energy-aware wake-up happens on the lowest sched_domain starting
++	 * from sd_asym_cpucapacity spanning over this_cpu and prev_cpu.
++	 */
++	sd = rcu_dereference(*this_cpu_ptr(&sd_asym_cpucapacity));
++	while (sd && !cpumask_test_cpu(prev_cpu, sched_domain_span(sd)))
++			sd = sd->parent;
++	if (!sd) {
++		rcu_read_unlock();
++		return find_later_rq_ff(p, prev_cpu);
++	}
++
++	bw = p->dl.dl_bw << SCHED_CAPACITY_SHIFT >> BW_SHIFT;
++	for (; pd; pd = pd->next) {
++		unsigned long cur_delta, spare_cap, max_spare_cap = 0;
++		unsigned long base_energy_pd;
++		int max_spare_cap_cpu = -1;
++
++		base_energy_pd = compute_energy(p, -1, pd);
++		base_energy +=  base_energy_pd;
++
++		for_each_cpu_and(cpu, perf_domain_span(pd), sched_domain_span(sd)) {
++			if (!cpumask_test_cpu(cpu, p->cpus_ptr))
++				continue;
++
++			util = cpu_rq(cpu)->dl.this_bw + (cpu == task_cpu(p) ? 0 : p->dl.dl_bw);
++			max_cap = arch_scale_cpu_capacity(cpu);
++
++			/* This cpu not have enough total capacity to schedule this task */
++			if(util > cpu_rq(cpu)->dl.max_bw)
++			{
++				continue;
++			}
++
++			spare_cap = max_cap - (util << SCHED_CAPACITY_SHIFT >> BW_SHIFT);
++
++			if (cpu == prev_cpu)
++			{
++
++				prev_delta = compute_energy(p, prev_cpu, pd);
++				prev_delta -= base_energy_pd;
++
++				if ((prev_delta <= best_delta) &&(!is_core_overload_dl(cpu_rq(prev_cpu))) ){
++					best_delta = prev_delta;
++					best_energy_cpu = prev_cpu;
++				}
++			}
++
++			/*
++			 * Find the CPU with the minimum energy required to scheduling task p
++			 */
++			if (spare_cap > max_spare_cap) {
++				max_spare_cap = spare_cap;
++				max_spare_cap_cpu = cpu;
++			}
++		}
++
++		// /* Evaluate the energy impact of using this CPU. */
++		 if (max_spare_cap_cpu >= 0 && max_spare_cap_cpu != prev_cpu) {
++			cur_delta = compute_energy(p, max_spare_cap_cpu, pd);
++			cur_delta -= base_energy_pd;
++			if (cur_delta < best_delta) {
++				best_delta = cur_delta;
++				best_energy_cpu = max_spare_cap_cpu;
++			}
++		 }
++	}
++	rcu_read_unlock();
++
++	if (prev_delta == ULONG_MAX)
++		return best_energy_cpu;
++
++	if ((prev_delta > best_delta)|| is_core_overload_dl(cpu_rq(prev_cpu)))
++		return best_energy_cpu;
++
++	return prev_cpu;
++}
++
++
+ static int find_later_rq(struct task_struct *task)
+ {
+ 	struct sched_domain *sd;
+@@ -2141,6 +2282,50 @@ static struct rq *find_lock_later_rq_ff(struct task_struct *task, struct rq *rq)
+ 	return later_rq;
+ }
+ 
++static struct rq *find_lock_energy_rq(struct task_struct *task, struct rq *rq, int prev_cpu)
++{
++	struct rq *later_rq = NULL;
++	int tries;
++	int cpu;
++
++	for (tries = 0; tries < DL_MAX_TRIES; tries++) {
++
++		cpu = find_energy_efficient_cpu(task, prev_cpu);
++
++		if ((cpu == -1) || (cpu == rq->cpu))
++			break;
++
++		later_rq = cpu_rq(cpu);
++
++		/* Retry if something changed. */
++		if (double_lock_balance(rq, later_rq)) {
++			if (unlikely(task_rq(task) != rq ||
++				     !cpumask_test_cpu(later_rq->cpu, task->cpus_ptr) ||
++				     task_running(rq, task) ||
++				     !dl_task(task) ||
++				     !task_on_rq_queued(task))) {
++				double_unlock_balance(rq, later_rq);
++				later_rq = NULL;
++				break;
++			}
++		}
++
++		/*
++		 * If the rq we found has no -deadline task, or
++		 * its earliest one has a later deadline than our
++		 * task, the rq is a good one.
++		 */
++		if (will_core_overload_dl(rq, task))
++			break;
++
++
++		/* Otherwise we try again. */
++		double_unlock_balance(rq, later_rq);
++		later_rq = NULL;
++	}
++	return later_rq;
++}
++
+ static struct task_struct *pick_next_pushable_dl_task(struct rq *rq)
+ {
+ 	struct task_struct *p;
+@@ -2185,7 +2370,7 @@ static int push_dl_task(struct rq *rq)
+ 
+ 	/* We might release rq lock */
+ 	get_task_struct(next_task);
+-	later_rq = find_lock_later_rq_ff(next_task, rq);
++	later_rq = find_lock_energy_rq(next_task, rq, rq->cpu);
+ 	if (!later_rq) {
+ 
+ 		/* Will lock the rq it'll find */
+-- 
+2.38.1
+

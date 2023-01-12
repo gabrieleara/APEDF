@@ -1,4 +1,4 @@
-From 01564b4280f885e4ba295615825df2567606c7f8 Mon Sep 17 00:00:00 2001
+From 8559de596dd1d9d79bf680cc946be71bb0f5af95 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Fri, 2 Dec 2022 11:25:42 +0000
 Subject: Fix DL: Keep looking for new pushable tasks
@@ -9,14 +9,14 @@ the first task in the list of pushable ones is not a new task.
 New preventive optimization can be re-introduced later if necessary by
 keeping a count of how many new pushable tasks there are on each rq.
 ---
- kernel/sched/deadline.c | 36 +++++++++++++++++++++---------------
- 1 file changed, 21 insertions(+), 15 deletions(-)
+ kernel/sched/deadline.c | 35 ++++++++++++++++++++++-------------
+ 1 file changed, 22 insertions(+), 13 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 247c9058a..07b0f3c63 100644
+index 15932d8b3824..7cdf302184f3 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -1526,7 +1526,7 @@ static void dequeue_dl_entity(struct sched_dl_entity *dl_se)
+@@ -1487,7 +1487,7 @@ static void dequeue_dl_entity(struct sched_dl_entity *dl_se)
  static void enqueue_task_dl(struct rq *rq, struct task_struct *p, int flags)
  {
  	struct task_struct *pi_task = rt_mutex_get_top_task(p);
@@ -25,17 +25,7 @@ index 247c9058a..07b0f3c63 100644
  	bool contending;
  
  	if (is_dl_boosted(&p->dl)) {
-@@ -2246,9 +2246,6 @@ static int push_dl_task(struct rq *rq)
- 	struct rb_node *node;
- 	int trycount = 0;
- 
--	if (is_migration_disabled(next_task))
--		return 0;
--
- 	/*
- 	 * This loop may start again from the beginning up to a fixed number of
- 	 * tries by setting node=NULL before getting the next one
-@@ -2257,20 +2254,19 @@ static int push_dl_task(struct rq *rq)
+@@ -2207,20 +2207,19 @@ static int push_dl_task(struct rq *rq)
  	     node = pushable_dl_next(rq, node, &trycount)) {
  		next_task = pushable_dl_task(rq, node);
  
@@ -62,7 +52,7 @@ index 247c9058a..07b0f3c63 100644
  
  		/*
  		 * Since we had to release the lock to find later_rq, check
-@@ -2279,17 +2275,27 @@ static int push_dl_task(struct rq *rq)
+@@ -2229,17 +2228,27 @@ static int push_dl_task(struct rq *rq)
  		 * NULL if we have to start again from the beginning.
  		 */
  		node = pushable_dl_find(rq, next_task);
@@ -72,6 +62,7 @@ index 247c9058a..07b0f3c63 100644
  			/*
 -			 * Task has already moved away or we cannot push it,
 -			 * either way we want to try find a new task to push.
+- 			 */
 +			 * Task either:
 +			 * - has already moved,
 +			 * - we cannot push it,
@@ -82,7 +73,7 @@ index 247c9058a..07b0f3c63 100644
 +			 * In any of these cases we keep going trying to find
 +			 * another task to push. If node == NULL we start again
 +			 * from the beginning.
- 			 */
++			 */
 +			next_task->dl.dl_new = 0;
  			put_task_struct(next_task);
  			continue;

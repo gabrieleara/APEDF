@@ -1,0 +1,31 @@
+From e7d232f974ff60172b9898f943fb80693fb2b761 Mon Sep 17 00:00:00 2001
+From: Gabriele Ara <gabriele.ara@santannapisa.it>
+Date: Fri, 2 Dec 2022 13:58:32 +0000
+Subject: Placing non contending tasks in DL timer
+
+---
+ kernel/sched/deadline.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index 07b0f3c63..5174ed72f 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1686,10 +1686,10 @@ select_task_rq_dl(struct task_struct *p, int cpu, int flags)
+ 
+ 	rq = cpu_rq(cpu);
+ 
+-	// TODO: Check if new deadline will be generated; if not, do nothing!
+-	if (!p->dl.dl_non_contending) {
+-		goto out;
+-	}
++	// // TODO: Check if new deadline will be generated; if not, do nothing!
++	// if (!p->dl.dl_non_contending) {
++	// 	goto out;
++	// }
+ 
+ 	rcu_read_lock();
+ 
+-- 
+2.25.1
+

@@ -1,0 +1,93 @@
+From b3f3e7ca8610be4fe7ef05e04e6a108c2d5337bb Mon Sep 17 00:00:00 2001
+From: Lukasz Luba <lukasz.luba@arm.com>
+Date: Wed, 19 Feb 2020 09:58:27 +0000
+Subject: [PATCH 1/2] ARM: dts: exynos: Add dynamic-power-coefficient to
+ Exynos5422 CPUs
+
+To use Energy Aware Scheduler (EAS) the Energy Model (EM) should be
+registered for CPUs. Add dynamic-power-coefficient into CPU nodes which
+let CPUFreq subsystem register the EM structures. This will increase
+energy efficiency of big.LITTLE platforms.
+
+The 'dynamic-power-coefficient' values have been obtained experimenting
+with different workloads. The power measurements taken from big CPU
+Cluster and LITTLE CPU Cluster has been compared with official documents
+and synthetic workloads estimations. The effective power ratio between
+Cortex-A7 and Cortex-A15 CPUs (~3x) is also aligned with documentation.
+
+Signed-off-by: Lukasz Luba <lukasz.luba@arm.com>
+---
+ arch/arm/boot/dts/exynos5422-cpus.dtsi | 8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+diff --git a/arch/arm/boot/dts/exynos5422-cpus.dtsi b/arch/arm/boot/dts/exynos5422-cpus.dtsi
+index aea3893fe..9615e9035 100644
+--- a/arch/arm/boot/dts/exynos5422-cpus.dtsi
++++ b/arch/arm/boot/dts/exynos5422-cpus.dtsi
+@@ -31,6 +31,7 @@
+ 			operating-points-v2 = <&cluster_a7_opp_table>;
+ 			#cooling-cells = <2>; /* min followed by max */
+ 			capacity-dmips-mhz = <539>;
++			dynamic-power-coefficient = <90>;
+ 		};
+ 
+ 		cpu1: cpu@101 {
+@@ -43,6 +44,7 @@
+ 			operating-points-v2 = <&cluster_a7_opp_table>;
+ 			#cooling-cells = <2>; /* min followed by max */
+ 			capacity-dmips-mhz = <539>;
++			dynamic-power-coefficient = <90>;
+ 		};
+ 
+ 		cpu2: cpu@102 {
+@@ -55,6 +57,7 @@
+ 			operating-points-v2 = <&cluster_a7_opp_table>;
+ 			#cooling-cells = <2>; /* min followed by max */
+ 			capacity-dmips-mhz = <539>;
++			dynamic-power-coefficient = <90>;
+ 		};
+ 
+ 		cpu3: cpu@103 {
+@@ -67,6 +70,7 @@
+ 			operating-points-v2 = <&cluster_a7_opp_table>;
+ 			#cooling-cells = <2>; /* min followed by max */
+ 			capacity-dmips-mhz = <539>;
++			dynamic-power-coefficient = <90>;
+ 		};
+ 
+ 		cpu4: cpu@0 {
+@@ -79,6 +83,7 @@
+ 			operating-points-v2 = <&cluster_a15_opp_table>;
+ 			#cooling-cells = <2>; /* min followed by max */
+ 			capacity-dmips-mhz = <1024>;
++			dynamic-power-coefficient = <310>;
+ 		};
+ 
+ 		cpu5: cpu@1 {
+@@ -91,6 +96,7 @@
+ 			operating-points-v2 = <&cluster_a15_opp_table>;
+ 			#cooling-cells = <2>; /* min followed by max */
+ 			capacity-dmips-mhz = <1024>;
++			dynamic-power-coefficient = <310>;
+ 		};
+ 
+ 		cpu6: cpu@2 {
+@@ -103,6 +109,7 @@
+ 			operating-points-v2 = <&cluster_a15_opp_table>;
+ 			#cooling-cells = <2>; /* min followed by max */
+ 			capacity-dmips-mhz = <1024>;
++			dynamic-power-coefficient = <310>;
+ 		};
+ 
+ 		cpu7: cpu@3 {
+@@ -115,6 +122,7 @@
+ 			operating-points-v2 = <&cluster_a15_opp_table>;
+ 			#cooling-cells = <2>; /* min followed by max */
+ 			capacity-dmips-mhz = <1024>;
++			dynamic-power-coefficient = <310>;
+ 		};
+ 	};
+ };
+-- 
+2.38.1
+

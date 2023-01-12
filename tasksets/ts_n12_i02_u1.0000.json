@@ -23,14 +23,14 @@
       "delay": 500000
     },
     "task02": {
-      "run": 1414,
+      "run": 1174,
       "timer": {
-        "period": 1470000,
+        "period": 1220000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 1489,
-      "dl-period": 1470000,
+      "dl-runtime": 1236,
+      "dl-period": 1220000,
       "delay": 500000
     },
     "task03": {
@@ -45,36 +45,36 @@
       "delay": 500000
     },
     "task04": {
-      "run": 1383,
+      "run": 1321,
       "timer": {
-        "period": 670000,
+        "period": 640000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 1456,
-      "dl-period": 670000,
+      "dl-runtime": 1391,
+      "dl-period": 640000,
       "delay": 500000
     },
     "task05": {
-      "run": 2140,
+      "run": 1711,
       "timer": {
-        "period": 50000,
+        "period": 40000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 2253,
-      "dl-period": 50000,
+      "dl-runtime": 1802,
+      "dl-period": 40000,
       "delay": 500000
     },
     "task06": {
-      "run": 1369,
+      "run": 1289,
       "timer": {
-        "period": 170000,
+        "period": 160000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 1442,
-      "dl-period": 170000,
+      "dl-runtime": 1357,
+      "dl-period": 160000,
       "delay": 500000
     },
     "task07": {
@@ -111,14 +111,14 @@
       "delay": 500000
     },
     "task10": {
-      "run": 1905,
+      "run": 2223,
       "timer": {
-        "period": 60000,
+        "period": 70000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 2006,
-      "dl-period": 60000,
+      "dl-runtime": 2340,
+      "dl-period": 70000,
       "delay": 500000
     },
     "task11": {
@@ -134,9 +134,9 @@
     }
   },
   "global": {
-    "duration": 600,
+    "duration": 30,
     "default_policy": "SCHED_DEADLINE",
-    "calibration": 80,
+    "calibration": 92,
     "pi_enabled": false,
     "lock_pages": true,
     "logdir": "/tmp/rt-app-logs",

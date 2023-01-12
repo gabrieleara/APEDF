@@ -1,4 +1,4 @@
-From b7751d7721f6c3528d93b326fe0c86ed75e30f07 Mon Sep 17 00:00:00 2001
+From d1436a8f1fa61c362bcfd77c5036d762c10a3d0f Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Sat, 26 Nov 2022 11:02:21 +0100
 Subject: [PATCH 1/2] Try to fix the issue with tasks "borning" on the wrong
@@ -14,10 +14,10 @@ on a different CPU core, so try to migrate it at its next wakeup.
  2 files changed, 13 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index e418935f8..812342dce 100644
+index d0e639497b10..554ac199a15b 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -626,11 +626,15 @@ struct sched_dl_entity {
+@@ -538,11 +538,15 @@ struct sched_dl_entity {
  	 *
  	 * @dl_overrun tells if the task asked to be informed about runtime
  	 * overruns.
@@ -34,10 +34,10 @@ index e418935f8..812342dce 100644
  	/*
  	 * Bandwidth enforcement timer. Each -deadline task has its
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 47da96adb..24736df6f 100644
+index 1e7b0ee9a6c4..edaaa1d7743b 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -1701,6 +1701,11 @@ select_task_rq_dl(struct task_struct *p, int cpu, int flags)
+@@ -1660,6 +1660,11 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
  	}
  
  	rcu_read_lock();
@@ -49,7 +49,7 @@ index 47da96adb..24736df6f 100644
  	/* Try FF --- We are being optimistic, here! */
  	target = find_later_rq_ff(p);
  	if (target >= 0) {
-@@ -1716,6 +1721,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int flags)
+@@ -1675,6 +1680,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
  		}
  #endif
  	}
@@ -57,7 +57,7 @@ index 47da96adb..24736df6f 100644
  	rcu_read_unlock();
  
  out:
-@@ -2261,7 +2267,7 @@ static int push_dl_task(struct rq *rq)
+@@ -2211,7 +2217,7 @@ static int push_dl_task(struct rq *rq)
  		next_task = pushable_dl_task(rq, node);
  
  		/* Do we still WANT to push tasks? */
@@ -66,7 +66,7 @@ index 47da96adb..24736df6f 100644
  			return 0;
  		}
  
-@@ -2307,6 +2313,7 @@ static int push_dl_task(struct rq *rq)
+@@ -2257,6 +2263,7 @@ static int push_dl_task(struct rq *rq)
  		resched_curr(later_rq);
  
  		double_unlock_balance(rq, later_rq);
@@ -74,7 +74,7 @@ index 47da96adb..24736df6f 100644
  		put_task_struct(next_task);
  		return 1;
  	}
-@@ -2586,6 +2593,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
+@@ -2521,6 +2528,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
  		return;
  	}
  

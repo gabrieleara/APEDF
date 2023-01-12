@@ -1,4 +1,4 @@
-From 2ddc622edcdac6b4599af9d3b601b2480270d7b5 Mon Sep 17 00:00:00 2001
+From ae9aa672053d7c708258a600e8b09083e8e8024d Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:12:18 +0000
 Subject: [PATCH 03/10] Add apedf extraversion
@@ -8,16 +8,16 @@ Subject: [PATCH 03/10] Add apedf extraversion
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Makefile b/Makefile
-index e7293e7a7..618c099b8 100644
+index bd9138cac7bb..8a5b7def64d4 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -2,7 +2,7 @@
  VERSION = 5
- PATCHLEVEL = 15
- SUBLEVEL = 76
+ PATCHLEVEL = 4
+ SUBLEVEL = 224
 -EXTRAVERSION =
 +EXTRAVERSION =-apedf1
- NAME = Trick or Treat
+ NAME = Kleptomaniac Octopus
  
  # *DOCUMENTATION*
 -- 

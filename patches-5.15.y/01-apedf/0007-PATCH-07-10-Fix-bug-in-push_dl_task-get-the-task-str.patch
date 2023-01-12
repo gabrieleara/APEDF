@@ -1,0 +1,39 @@
+From 739d8bb84afe5cd4df6f6a150b856bf6636c761a Mon Sep 17 00:00:00 2001
+From: luca abeni <luca.abeni@santannapisa.it>
+Date: Thu, 18 Nov 2021 13:17:24 +0000
+Subject: [PATCH 07/10] Fix bug in push_dl_task: get the task structure when
+ needed
+
+---
+ kernel/sched/deadline.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index abe1253ec..3dcd06aaf 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -2206,16 +2206,16 @@ static int push_dl_task(struct rq *rq)
+ 		return 0;
+ 
+ 	/* We might release rq lock */
++retry:
+ 	get_task_struct(next_task);
+-
+-	/* Will lock the rq it'll find */
+ 	later_rq = find_lock_later_rq_ff(next_task, rq);
+ 	if (!later_rq) {
+-		struct task_struct *task;
+-		if (rq->dl.this_bw < rq->dl.max_bw)
++		if (rq->dl.this_bw < rq->dl.max_bw) {
++			put_task_struct(next_task);
++
+ 			return 0;
++		}
+ 
+-retry:
+ 		/* Will lock the rq it'll find */
+ 		later_rq = find_lock_later_rq(next_task, rq);
+ 		if (!later_rq) {
+-- 
+2.25.1
+

@@ -111,14 +111,14 @@
       "delay": 500000
     },
     "task10": {
-      "run": 1113,
+      "run": 1536,
       "timer": {
-        "period": 500000,
+        "period": 690000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 1172,
-      "dl-period": 500000,
+      "dl-runtime": 1617,
+      "dl-period": 690000,
       "delay": 500000
     },
     "task11": {
@@ -134,9 +134,9 @@
     }
   },
   "global": {
-    "duration": 126,
+    "duration": 30,
     "default_policy": "SCHED_DEADLINE",
-    "calibration": 80,
+    "calibration": 92,
     "pi_enabled": false,
     "lock_pages": true,
     "logdir": "/tmp/rt-app-logs",

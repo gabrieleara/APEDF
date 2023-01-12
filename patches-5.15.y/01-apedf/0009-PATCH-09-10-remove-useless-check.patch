@@ -1,0 +1,30 @@
+From 9b7f611d2b38bd8d38312efa85de3e02c2367228 Mon Sep 17 00:00:00 2001
+From: luca abeni <luca.abeni@santannapisa.it>
+Date: Thu, 18 Nov 2021 13:19:17 +0000
+Subject: [PATCH 09/10] remove useless check
+
+---
+ kernel/sched/deadline.c | 7 +------
+ 1 file changed, 1 insertion(+), 6 deletions(-)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index f55526e87..68024b9cc 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -2371,12 +2371,7 @@ static void pull_dl_task(struct rq *this_rq)
+  */
+ static void task_woken_dl(struct rq *rq, struct task_struct *p)
+ {
+-	if (!task_running(rq, p) &&
+-	    !test_tsk_need_resched(rq->curr) &&
+-	    p->nr_cpus_allowed > 1 &&
+-	    dl_task(rq->curr) &&
+-	    (rq->curr->nr_cpus_allowed < 2 ||
+-	     !dl_entity_preempt(&p->dl, &rq->curr->dl))) {
++	if (rq->dl.this_bw > rq->dl.max_bw) {
+ 		push_dl_tasks(rq);
+ 	}
+ }
+-- 
+2.25.1
+

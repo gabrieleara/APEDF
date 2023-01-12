@@ -1,14 +1,14 @@
 {
   "tasks": {
     "task00": {
-      "run": 1320,
+      "run": 1384,
       "timer": {
-        "period": 410000,
+        "period": 430000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 1390,
-      "dl-period": 410000,
+      "dl-runtime": 1457,
+      "dl-period": 430000,
       "delay": 500000
     },
     "task01": {
@@ -23,14 +23,14 @@
       "delay": 500000
     },
     "task02": {
-      "run": 1427,
+      "run": 1382,
       "timer": {
-        "period": 630000,
+        "period": 610000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 1503,
-      "dl-period": 630000,
+      "dl-runtime": 1455,
+      "dl-period": 610000,
       "delay": 500000
     },
     "task03": {
@@ -67,14 +67,14 @@
       "delay": 500000
     },
     "task06": {
-      "run": 1513,
+      "run": 1607,
       "timer": {
-        "period": 160000,
+        "period": 170000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 1593,
-      "dl-period": 160000,
+      "dl-runtime": 1692,
+      "dl-period": 170000,
       "delay": 500000
     },
     "task07": {
@@ -89,14 +89,14 @@
       "delay": 500000
     },
     "task08": {
-      "run": 1759,
+      "run": 1832,
       "timer": {
-        "period": 240000,
+        "period": 250000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 1852,
-      "dl-period": 240000,
+      "dl-runtime": 1929,
+      "dl-period": 250000,
       "delay": 500000
     },
     "task09": {
@@ -122,14 +122,14 @@
       "delay": 500000
     },
     "task11": {
-      "run": 1690,
+      "run": 1731,
       "timer": {
-        "period": 820000,
+        "period": 840000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 1779,
-      "dl-period": 820000,
+      "dl-runtime": 1823,
+      "dl-period": 840000,
       "delay": 500000
     },
     "task12": {
@@ -178,9 +178,9 @@
     }
   },
   "global": {
-    "duration": 600,
+    "duration": 30,
     "default_policy": "SCHED_DEADLINE",
-    "calibration": 80,
+    "calibration": 92,
     "pi_enabled": false,
     "lock_pages": true,
     "logdir": "/tmp/rt-app-logs",

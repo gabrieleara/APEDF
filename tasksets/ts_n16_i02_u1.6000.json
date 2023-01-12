@@ -1,14 +1,14 @@
 {
   "tasks": {
     "task00": {
-      "run": 2045,
+      "run": 2241,
       "timer": {
-        "period": 210000,
+        "period": 230000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 2153,
-      "dl-period": 210000,
+      "dl-runtime": 2359,
+      "dl-period": 230000,
       "delay": 500000
     },
     "task01": {
@@ -178,9 +178,9 @@
     }
   },
   "global": {
-    "duration": 600,
+    "duration": 30,
     "default_policy": "SCHED_DEADLINE",
-    "calibration": 80,
+    "calibration": 92,
     "pi_enabled": false,
     "lock_pages": true,
     "logdir": "/tmp/rt-app-logs",

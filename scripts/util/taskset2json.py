@@ -61,10 +61,16 @@ def parse_args():
                         help="The fraction of the runtime it should actually run for",
                         )
 
-    parser.add_argument('-d', '--min-duration',
+    parser.add_argument('-m', '--min-duration',
                         default='20',
                         type=int,
                         help="The minimum duration in seconds of the taskset exectution",
+                        )
+
+    parser.add_argument('-M', '--max-duration',
+                        default='600',
+                        type=int,
+                        help="The maximum duration in seconds of the taskset exectution",
                         )
 
     parser.add_argument('-c', '--calibration',
@@ -209,12 +215,12 @@ def main():
     # for
 
     hyperperiod = timer2secs(hyperperiod)
-    hyperperiod = max(20, hyperperiod)   # min 20 seconds
-    hyperperiod = min(600, hyperperiod) # max 10 minutes
+    hyperperiod = max(args.min_duration, hyperperiod)
+    hyperperiod = min(args.max_duration, hyperperiod)
     out['global']['duration'] = hyperperiod
     # out['global']['logdir'] += args.log_suffix
 
-    eprint("Duration:", hyperperiod, 's')
+    # eprint("Duration:", hyperperiod, 's')
 
     json.dump(out, outfile, indent=2)
 

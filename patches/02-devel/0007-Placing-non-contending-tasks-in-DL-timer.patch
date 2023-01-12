@@ -1,17 +1,35 @@
-From 63e8958c73e9222eeb0ac78a3d9f1f6b30da97a4 Mon Sep 17 00:00:00 2001
+From 0a777d5d700b31a4e86cb9f64adb2353a8b34bd8 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Fri, 2 Dec 2022 13:58:32 +0000
 Subject: Placing non contending tasks in DL timer
 
 ---
- kernel/sched/deadline.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ kernel/sched/deadline.c | 16 ++++++----------
+ 1 file changed, 6 insertions(+), 10 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 07b0f3c63..5174ed72f 100644
+index 7cdf302184f3..c5b216c6944d 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -1686,10 +1686,10 @@ select_task_rq_dl(struct task_struct *p, int cpu, int flags)
+@@ -982,7 +982,7 @@ static int start_dl_timer(struct task_struct *p)
+ }
+ 
+ static int
+-select_task_rq_dl(struct task_struct *p, int cpu, int flags);
++select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags);
+ /*
+  * This is the bandwidth enforcement timer callback. If here, we know
+  * a task is not on its dl_rq, since the fact that the timer was running
+@@ -1007,7 +1007,7 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
+ 	int cpu;
+ 
+ 	raw_spin_lock_irqsave(&p->pi_lock, rf.flags);
+-	cpu = select_task_rq_dl(p, p->wake_cpu, 0);
++	cpu = select_task_rq_dl(p, p->wake_cpu, 0, 0);
+ 	if (task_cpu(p) != cpu) {
+ 		set_task_cpu(p, cpu);
+ 	}
+@@ -1645,10 +1645,10 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
  
  	rq = cpu_rq(cpu);
  
@@ -26,6 +44,17 @@ index 07b0f3c63..5174ed72f 100644
  
  	rcu_read_lock();
  
+@@ -2207,10 +2207,6 @@ static int push_dl_task(struct rq *rq)
+ 	     node = pushable_dl_next(rq, node, &trycount)) {
+ 		next_task = pushable_dl_task(rq, node);
+ 
+-		if (is_migration_disabled(next_task)) {
+-			continue;
+-		}
+-
+ 		/* Do we want to push this task? */
+ 		if (rq->dl.this_bw <= rq->dl.max_bw && next_task->dl.dl_new == 0) {
+ 			continue;
 -- 
 2.25.1
 

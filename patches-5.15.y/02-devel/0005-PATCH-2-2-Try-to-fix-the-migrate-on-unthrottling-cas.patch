@@ -1,0 +1,81 @@
+From 1cda52903a308c4e590316b176c6dd357d8b75ff Mon Sep 17 00:00:00 2001
+From: luca abeni <luca.abeni@santannapisa.it>
+Date: Sat, 26 Nov 2022 11:15:32 +0100
+Subject: [PATCH 2/2] Try to fix the "migrate on unthrottling" case
+
+Instead of inserting a task in a maybe wrong runqueue
+and pushing after that, try to immediately select the
+correct runqueue before inserting the task.
+
+ONLY BUILD-TESTED!
+---
+ kernel/sched/deadline.c | 31 +++++++++++--------------------
+ 1 file changed, 11 insertions(+), 20 deletions(-)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index 24736df6f..247c9058a 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1024,6 +1024,8 @@ static int start_dl_timer(struct task_struct *p)
+ 	return 1;
+ }
+ 
++static int
++select_task_rq_dl(struct task_struct *p, int cpu, int flags);
+ /*
+  * This is the bandwidth enforcement timer callback. If here, we know
+  * a task is not on its dl_rq, since the fact that the timer was running
+@@ -1045,8 +1047,15 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
+ 	struct task_struct *p = dl_task_of(dl_se);
+ 	struct rq_flags rf;
+ 	struct rq *rq;
++	int cpu;
+ 
+-	rq = task_rq_lock(p, &rf);
++	raw_spin_lock_irqsave(&p->pi_lock, rf.flags);
++	cpu = select_task_rq_dl(p, p->wake_cpu, 0);
++	if (task_cpu(p) != cpu) {
++		set_task_cpu(p, cpu);
++	}
++
++	rq = __task_rq_lock(p, &rf);
+ 
+ 	/*
+ 	 * The task might have changed its scheduling policy to something
+@@ -1116,22 +1125,6 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
+ 	else
+ 		resched_curr(rq);
+ 
+-#ifdef CONFIG_SMP
+-	/*
+-	 * Queueing this task back might have overloaded rq, check if we need
+-	 * to kick someone away.
+-	 */
+-	if (rq->dl.this_bw > rq->dl.max_bw && has_pushable_dl_tasks(rq)) {
+-		/*
+-		 * Nothing relies on rq->lock after this, so its safe to drop
+-		 * rq->lock.
+-		 */
+-		rq_unpin_lock(rq, &rf);
+-		push_dl_task(rq);
+-		rq_repin_lock(rq, &rf);
+-	}
+-#endif
+-
+ unlock:
+ 	task_rq_unlock(rq, p, &rf);
+ 
+@@ -1689,9 +1682,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int flags)
+ {
+ 	struct task_struct *curr;
+ 	struct rq *rq;
+-
+-	if (!(flags & WF_TTWU))
+-		goto out;
++	int target;
+ 
+ 	rq = cpu_rq(cpu);
+ 
+-- 
+2.25.1
+

@@ -1,14 +1,14 @@
 {
   "tasks": {
     "task00": {
-      "run": 1972,
+      "run": 2218,
       "timer": {
-        "period": 80000,
+        "period": 90000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 2076,
-      "dl-period": 80000,
+      "dl-runtime": 2335,
+      "dl-period": 90000,
       "delay": 500000
     },
     "task01": {
@@ -56,14 +56,14 @@
       "delay": 500000
     },
     "task05": {
-      "run": 1383,
+      "run": 1659,
       "timer": {
-        "period": 50000,
+        "period": 60000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 1456,
-      "dl-period": 50000,
+      "dl-runtime": 1747,
+      "dl-period": 60000,
       "delay": 500000
     },
     "task06": {
@@ -133,14 +133,14 @@
       "delay": 500000
     },
     "task12": {
-      "run": 1967,
+      "run": 1735,
       "timer": {
-        "period": 170000,
+        "period": 150000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 2071,
-      "dl-period": 170000,
+      "dl-runtime": 1827,
+      "dl-period": 150000,
       "delay": 500000
     },
     "task13": {
@@ -178,9 +178,9 @@
     }
   },
   "global": {
-    "duration": 600,
+    "duration": 30,
     "default_policy": "SCHED_DEADLINE",
-    "calibration": 80,
+    "calibration": 92,
     "pi_enabled": false,
     "lock_pages": true,
     "logdir": "/tmp/rt-app-logs",

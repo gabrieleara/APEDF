@@ -50,6 +50,7 @@ function parse_args() {
 	COOLDOWN=90s
 	SKIPBUILD=n
 	PRINTLIST=n
+	OVERWRITE=n
 	MAX_FREQ="$MAX_FREQ_DEFAULT"
 	while [ $# -gt 0 ]; do
 		case $1 in
@@ -65,6 +66,9 @@ function parse_args() {
 			;;
 		--printlist)
 			PRINTLIST=y
+			;;
+		--overwrite)
+			OVERWRITE=y
 			;;
 		--loglevel*)
 			if echo $1 | grep '=' >/dev/null; then
@@ -269,6 +273,16 @@ function main() {
 		i=$((i + 1))
 		printf ' + Running test [%0'$ndigits'd/%0'$ndigits'd] defined in %s ...' "$i" "$ntsets" "$ts"
 
+		ts_base="$(basename "$ts")"
+		ts_base="${ts_base%.*}"
+		power_file_out="${ts_base}.power"
+		rtapp_dir_out="${ts_base}.rt-app.d"
+
+		if [ -d "${OUTDIR}/${rtapp_dir_out}" ] && [ "$OVERWRITE" != y ]; then
+			echo ' ++ Skipping...'
+			continue
+		fi
+
 		# Power sampler
 		# nice -n -20 "$SAMPLER_APP" >"$POWER_FILE" 2>/dev/null &
 		# POWER_PID="$!"
@@ -280,11 +294,6 @@ function main() {
 		# kill "$POWER_PID"
 		sync
 		wait
-
-		ts_base="$(basename "$ts")"
-		ts_base="${ts_base%.*}"
-		power_file_out="${ts_base}.power"
-		rtapp_dir_out="${ts_base}.rt-app.d"
 
 		# cp "$POWER_FILE" "${OUTDIR}/${power_file_out}"
 		cp -r "/tmp/rt-app-logs" "${OUTDIR}/${rtapp_dir_out}"
@@ -300,10 +309,10 @@ function main() {
 		# Wait for a while just in case board is heating up
 		sleep "$COOLDOWN"
 
-		if [ $i = $j ]; then
+		if [ $i -ge $j ]; then
 			telegram_notify \
 				"Completion rate on $(hostname_waddress): $i / $ntsets" || true
-			j=$((j + 10))
+			j=$((i + 10))
 		fi
 
 	done

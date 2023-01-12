@@ -1,5 +1,4 @@
-#! /usr/bin/python3
-
+#!/usr/bin/env python3
 
 import argparse
 import sys
@@ -191,7 +190,7 @@ def main():
         return 1
 
     if args.seed > 0:
-        print("Setting the seed to " + str(args.seed), file=sys.stderr)
+        # print("Setting the seed to " + str(args.seed), file=sys.stderr)
         np.random.seed(args.seed)
 
     known_perdists = ["unif", "logunif"]
@@ -228,7 +227,7 @@ def main():
         return 1
 
     args.format = args.format.replace("\\n", "\n")
-    
+
 
     gen_tasksets(args)
 
@@ -261,5 +260,3 @@ def print_help(parser):
 if __name__ == "__main__":
 	#print(sys.path)
     sys.exit(main())
-
-

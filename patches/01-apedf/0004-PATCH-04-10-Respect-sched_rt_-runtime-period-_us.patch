@@ -1,4 +1,4 @@
-From 71db7b771b50d8b380a71f3f0339b44ed820b9d8 Mon Sep 17 00:00:00 2001
+From 7d80319cf1e90d7d07113927db47fa7793592469 Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:13:35 +0000
 Subject: [PATCH 04/10] Respect sched_rt_{runtime,period}_us
@@ -9,10 +9,10 @@ Subject: [PATCH 04/10] Respect sched_rt_{runtime,period}_us
  2 files changed, 12 insertions(+), 7 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index d9686f8ec..02f51a565 100644
+index 28675602869c..2d12579307b4 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -1121,7 +1121,7 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
+@@ -1078,7 +1078,7 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
  	 * Queueing this task back might have overloaded rq, check if we need
  	 * to kick someone away.
  	 */
@@ -21,7 +21,7 @@ index d9686f8ec..02f51a565 100644
  		/*
  		 * Nothing relies on rq->lock after this, so its safe to drop
  		 * rq->lock.
-@@ -1695,7 +1695,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int flags)
+@@ -1654,7 +1654,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
  	target = find_later_rq_ff(p);
  	if (target >= 0) {
  		cpu = target;
@@ -30,7 +30,7 @@ index d9686f8ec..02f51a565 100644
  		/* FF did not work: Try gEDF */
  		target = find_later_rq(p);
  		if (target >= 0 &&
-@@ -1832,7 +1832,7 @@ static void set_next_task_dl(struct rq *rq, struct task_struct *p, bool first)
+@@ -1790,7 +1790,7 @@ static void set_next_task_dl(struct rq *rq, struct task_struct *p, bool first)
  	if (rq->curr->sched_class != &dl_sched_class)
  		update_dl_rq_load_avg(rq_clock_pelt(rq), rq, 0);
  
@@ -39,7 +39,7 @@ index d9686f8ec..02f51a565 100644
  }
  
  static struct sched_dl_entity *pick_next_dl_entity(struct rq *rq,
-@@ -2053,7 +2053,7 @@ static int find_later_rq_ff(struct task_struct *task)
+@@ -2003,7 +2003,7 @@ static int find_later_rq_ff(struct task_struct *task)
  		struct rq *rq = cpu_rq(i);
  		u64 added_bw = i == task_cpu(task) ? 0 : task->dl.dl_bw;
  
@@ -48,7 +48,7 @@ index d9686f8ec..02f51a565 100644
  			return i;
  		}
  	}
-@@ -2151,7 +2151,7 @@ static struct rq *find_lock_later_rq_ff(struct task_struct *task, struct rq *rq)
+@@ -2101,7 +2101,7 @@ static struct rq *find_lock_later_rq_ff(struct task_struct *task, struct rq *rq)
  		 * its earliest one has a later deadline than our
  		 * task, the rq is a good one.
  		 */
@@ -57,7 +57,7 @@ index d9686f8ec..02f51a565 100644
  			break;
  
  		/* Otherwise we try again. */
-@@ -2210,7 +2210,7 @@ static int push_dl_task(struct rq *rq)
+@@ -2155,7 +2155,7 @@ static int push_dl_task(struct rq *rq)
  	later_rq = find_lock_later_rq_ff(next_task, rq);
  	if (!later_rq) {
  		struct task_struct *task;
@@ -66,7 +66,7 @@ index d9686f8ec..02f51a565 100644
  			return 0;
  
  retry:
-@@ -2541,7 +2541,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
+@@ -2471,7 +2471,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
  
  	if (rq->curr != p) {
  #ifdef CONFIG_SMP
@@ -75,7 +75,7 @@ index d9686f8ec..02f51a565 100644
  			deadline_queue_push_tasks(rq);
  #endif
  		if (dl_task(rq->curr))
-@@ -2662,11 +2662,14 @@ static void init_dl_rq_bw_ratio(struct dl_rq *dl_rq)
+@@ -2585,11 +2585,14 @@ void init_dl_rq_bw_ratio(struct dl_rq *dl_rq)
  	if (global_rt_runtime() == RUNTIME_INF) {
  		dl_rq->bw_ratio = 1 << RATIO_SHIFT;
  		dl_rq->extra_bw = 1 << BW_SHIFT;
@@ -91,10 +91,10 @@ index d9686f8ec..02f51a565 100644
  }
  
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index e49902898..bea4f2115 100644
+index b8a3db59e326..ecc520b26a78 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -729,6 +729,8 @@ struct dl_rq {
+@@ -685,6 +685,8 @@ struct dl_rq {
  	 * by the GRUB algorithm.
  	 */
  	u64			bw_ratio;

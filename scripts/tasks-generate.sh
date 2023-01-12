@@ -1,43 +1,7 @@
 #!/bin/bash
 
-# ======================================================== #
-# ----------- SCRIPT PATH MANAGEMENT FUNCTIONS ----------- #
-# ======================================================== #
-
-function jump_and_print_path() {
-    cd -P "$(dirname "$1")" >/dev/null 2>&1 && pwd
-}
-
 function get_script_path() {
-    local _SOURCE
-    local _PATH
-
-    _SOURCE="${BASH_SOURCE[0]}"
-
-    # Resolve $_SOURCE until the file is no longer a symlink
-    while [ -h "$_SOURCE" ]; do
-        _PATH="$(jump_and_print_path "${_SOURCE}")"
-        _SOURCE="$(readlink "${_SOURCE}")"
-
-        # If $_SOURCE is a relative symlink, we need to
-        # resolve it relative to the path where the symlink
-        # file was located
-        [[ $_SOURCE != /* ]] && _SOURCE="${_PATH}/${_SOURCE}"
-    done
-
-    _PATH="$(jump_and_print_path "$_SOURCE")"
-    echo "${_PATH}"
-}
-
-# Argument: relative path of project directory wrt this
-# script directory
-function get_project_path() {
-    local _PATH
-    local _PROJPATH
-
-    _PATH=$(get_script_path)
-    _PROJPATH=$(realpath "${_PATH}/$1")
-    echo "${_PROJPATH}"
+    echo "$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")"
 }
 
 # ======================================================== #
@@ -296,13 +260,16 @@ function check_utilization() {
     GT_RT_FRACTION=.95
 
     # The minimum test duration in seconds.
-    GT_RT_DURATION=20
+    GT_RT_MIN_DURATION=20
+
+    # The maximum test duration in seconds.
+    GT_RT_MAX_DURATION=600
 
     # The calibration for RT-App.
     # USE:
     # - LITTLE  core @ 1.4 GHz => 204
-    # - big     core @ 1.4 GHz => 80
-    GT_RT_CALIBRATION=80
+    # - big     core @ 1.4 GHz => 92
+    GT_RT_CALIBRATION=92
 
     # ==================================================== #
     # ----------------------- MAIN ----------------------- #
@@ -368,14 +335,15 @@ function check_utilization() {
                 json_file="${tset_file}.json"
 
                 generate_taskset "$seed" "$num_tasks" "$util" \
-                    >"$text_file" 2>/dev/null
+                    >"$text_file" # 2>/dev/null
 
                 # # NOTE: this could be necessary if the tasks exceed the maximum
                 # check_utilization "$text_file" "$util"
 
                 "$SDIR/util/taskset2json.py" \
                     -r "$GT_RT_FRACTION" \
-                    -d "$GT_RT_DURATION" \
+                    -m "$GT_RT_MIN_DURATION" \
+                    -M "$GT_RT_MAX_DURATION" \
                     -c "$GT_RT_CALIBRATION" \
                     -q "$max_quota" \
                     <"$text_file" >"$json_file"
@@ -404,7 +372,7 @@ function check_utilization() {
 # Auto-generated file, do not edit
 
 export GT_OUT_DIR="${GT_OUT_DIR}"
-export GT_NUM_TASKS_LIST=(${GT_NUM_TASKS[@]})
+export GT_NUM_TASKS_LIST=(${GT_NUM_TASKS_LIST[@]})
 export GT_NUM_TASKSETS="${GT_NUM_TASKSETS}"
 export GT_UTILS_NUM="${GT_UTILS_NUM}"
 export GT_UMIN_FRAC="${GT_UMIN_FRAC}"
@@ -413,7 +381,8 @@ export GT_UTILS_LIST=(${GT_UTILS_LIST[@]})
 export GT_SEED="${GT_SEED}"
 export GT_SEEDS_LIST=(${GT_SEEDS_LIST[@]})
 export GT_RT_FRACTION="${GT_RT_FRACTION}"
-export GT_RT_DURATION="${GT_RT_DURATION}"
+export GT_RT_MIN_DURATION="${GT_RT_MIN_DURATION}"
+export GT_RT_MAX_DURATION="${GT_RT_MAX_DURATION}"
 export GT_RT_CALIBRATION="${GT_RT_CALIBRATION}"
 EOF
 )
