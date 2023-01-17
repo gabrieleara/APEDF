@@ -295,6 +295,11 @@ function main() {
 		sync
 		wait
 
+		# Delete all previous results first, to overwrite with the new ones
+		if [ -d "${OUTDIR}/${rtapp_dir_out}" ]; then
+			rm -rf "${OUTDIR}/${rtapp_dir_out}"
+		fi
+
 		# cp "$POWER_FILE" "${OUTDIR}/${power_file_out}"
 		cp -r "/tmp/rt-app-logs" "${OUTDIR}/${rtapp_dir_out}"
 

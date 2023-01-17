@@ -41,12 +41,15 @@ def main():
         label = os.path.splitext(os.path.basename(filename))[0]
         dfs[label] = pd.read_csv(f, sep='\t', index_col=None, header=0)
 
+    for label, df in dfs.items():
+        df.sort_values('util', ignore_index=True, inplace=True)
+
     fig, ax = plt.subplots()
 
     for label in dfs:
-        ax.plot(
+        ax.scatter(
             dfs[label]['util'],
-            dfs[label]['miss-ratio'],
+            dfs[label]['miss_ratio'],
             label=label,
         )
 

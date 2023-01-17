@@ -1,114 +1,275 @@
 #!/usr/bin/env python3
 
-import pandas as pd
 import argparse
 import os
+import pandas as pd
+import parse
 import sys
+
 
 def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
-def dir_path(string):
-    if os.path.isdir(string):
-        return string
-    else:
-        raise NotADirectoryError(string)
-#-- dir_path
 
-
-def parse_args():
+def arguments_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("in_dir", type=dir_path)
-    parser.add_argument('-o', "--out-file", default='/dev/stdout')
-    parser.add_argument('-m', "--print-misses", action='store_true')
-    return parser.parse_args()
-#-- parse_args
+    parser.add_argument("in_dir", type=str)
+    parser.add_argument('-o', "--out-file",
+                        default='/dev/stdout',
+                        help="Where to save stats for each taskset",
+                        )
+    parser.add_argument('-O', "--out-file2",
+                        default='/dev/null',
+                        help="Where to save stats for each task in each taskset",
+                        )
+    parser.add_argument('-m', "--print-misses",
+                        action='store_true',
+                        help="Log on STDERR each deadline miss",
+                        )
+    parser.add_argument('-d', "--discard-small",
+                        action='store_true',
+                        help="Discard tasksets with very small tasks",
+                        )
+    parser.add_argument('-D', "--discard-overrun",
+                        action='store_true',
+                        help="Discard tasksets for which there is at least one overrun (exec time greather than c_runtime)",
+                        )
+    return parser
+
+
+DISCARD_SMALL = False
+DISCARD_OVERRUN = False
+PRINT_MISSES = False
+
+
+class TooShortException(Exception):
+    pass
+
+
+class OverrunException(Exception):
+    pass
+
+
+def parse_task(task_logfile):
+    # Logfiles have multiple spaces as a single separator
+    task_log = pd.read_csv(task_logfile, delimiter=r"\s+")
+    task_log.rename(columns={'#idx': 'idx'}, inplace=True)
+
+    # Fields description:
+    # - idx:        STATIC          task index in taskset
+    # - perf:       STATIC          fixed amount of work performed (c_duration / calibration)
+    # - run:        DYNAMIC [us]    time spent to execute
+    # - period:     DYNAMIC [us]    time spent including sleep and slack
+    # - start:      DYNAMIC [us]    absolute start time
+    # - end:        DYNAMIC [us]    absolute end time
+    # - rel_st      DYNAMIC [us]    start time of a phase relatively to the beg of the use case
+    # - slack       DYNAMIC [us]    remaining time before the task deadline
+    # - c_duration  STATIC  [us]    expected execution time         [SCHED_DEADLINE parameter]
+    # - c_period    STATIC  [us]    expected activation period          [SCHED_DEADLINE parameter]
+    # - wu_lat      DYNAMIC [us]    sum of wakeup latencies after timer events
+    # - cpu         DYNAMIC         CPU id where it executed
+
+    # Collapse all static fields in a more accessible struct
+    STATIC_FIELDS = ['idx', 'perf', 'c_duration', 'c_period', ]
+    task_info = {}
+    for field in STATIC_FIELDS:
+        task_info[field] = task_log[field][0]
+
+    # FIXME: log thrown exceptions
+
+    # For now we skip all tasks with not enough runtime
+    if task_info['c_duration'] < 5000 and DISCARD_SMALL:
+        raise TooShortException
+
+    # Extra fields:
+    # - exec_ratio: ratio between the expected runtime (reservation) and the
+    #               actual one (if >= 1 we had an overrun!)
+    task_log['exec_ratio'] = task_log['run'] / task_log['c_duration']
+
+    # Count the number of overruns, if positive of course we have misses!
+    if task_log['exec_ratio'].ge(1).count() > 0 and DISCARD_OVERRUN:
+        raise OverrunException
+
+    # If we get here, everything should be alright (exception thrown by other
+    # tasks must be taken into account in the taskset parser function, so that
+    # we skip those tasks)
+
+    # Count all rows and all the ones with a negative slack
+    count = task_log['slack'].count()
+    misses = task_log[task_log['slack'] < 0]['slack'].count()
+    miss_ratio = misses / count
+    minslack = task_log['slack'].min()
+    maxslack = task_log['slack'].max()
+
+    if misses > 0 and PRINT_MISSES:
+        eprint(f"Task {task_logfile} has {misses} misses!")
+
+    # Count migrations
+    def mark_migrations(col):
+        x = (col != col.shift().bfill())
+        s = x.cumsum()
+        return s.groupby(s).transform('count').shift().where(x)
+
+    # NOTE: I want a DF with a single column, not a Series
+    task_placement = task_log[['cpu']]
+    task_placement = task_placement.apply(mark_migrations)
+    migrations = task_placement['cpu'].count()
+
+    return {
+        **task_info,
+        'count':        count,
+        'misses':       misses,
+        'miss_ratio':   miss_ratio,
+        'minslack':     minslack,
+        'maxslack':     maxslack,
+        'migrations':   migrations,
+    }
+
+
+def parse_taskset(tset_dir):
+    tset_dirname = os.path.basename(tset_dir)
+    tset_info = parse.parse("ts_n{num_tasks:2d}_i{tset_idx:2d}_u{util:f}.rt-app.d",
+                            tset_dirname)
+
+    if tset_info is None:
+        eprint(
+            f"Error: invalid directory specified, could not parse taskset data from directory {tset_dir}")
+        sys.exit(1)
+
+    # Get dictionary from parse result type
+    tset_info = tset_info.named
+
+    tset_stats = {
+        **tset_info,
+        'count': 0,
+        'misses': 0,
+        'miss_ratio': 0,
+        'minslack': float('inf'),
+        'maxslack': -float('inf'),
+        'migrations':   0,
+    }
+
+    tasks_stats = []
+
+    task_dirs = [d for d in os.listdir(tset_dir) if 'rt-app-task' in d]
+    for tdir in task_dirs:
+        # This function may raise an exception, which will make us skip this taskset
+        tstats = parse_task(os.path.join(tset_dir, tdir))
+
+        tstats = {
+            **tset_info,
+            **tstats,
+        }
+
+        tasks_stats += [tstats]
+
+        tset_stats['count'] += tstats['count']
+        tset_stats['misses'] += tstats['misses']
+        tset_stats['migrations'] += tstats['migrations']
+        tset_stats['minslack'] = min(
+            tstats['minslack'], tset_stats['minslack'])
+        tset_stats['maxslack'] = max(
+            tstats['maxslack'], tset_stats['maxslack'])
+
+    tset_stats['miss_ratio'] = tset_stats['misses'] / tset_stats['count']
+
+    # 1. The stats of the whole taskset
+    # 2. List of the stats of each task
+    return tset_stats, tasks_stats
 
 
 def main():
-    args = parse_args()
+    global PRINT_MISSES
+    global DISCARD_OVERRUN
+    global DISCARD_SMALL
+
+    parser = arguments_parser()
+    args = parser.parse_args()
+
+    PRINT_MISSES = args.print_misses
+    DISCARD_OVERRUN = args.discard_overrun
+    DISCARD_SMALL = args.discard_small
+
+    tasks_rows = []
+    tsets_rows = []
+
+    if not os.path.isdir(args.in_dir):
+        eprint(
+            f"Supplied directory argument {args.in_dir} is not a valid directory!")
+        parser.print_help()
+        return 1
 
     tset_dirs = [d for d in os.listdir(args.in_dir) if 'rt-app.d' in d]
+    for tset_dir in tset_dirs:
+        try:
+            tset_stats, tasks_stats = parse_taskset(
+                os.path.join(args.in_dir, tset_dir))
+        except (TooShortException, OverrunException) as error:
+            eprint(
+                f"WARN: {type(error).__name__}, skipping {tset_dir} ...")
+            continue
 
-    rows = {}
+        tsets_rows += [tset_stats]
+        tasks_rows += tasks_stats
 
-    df = pd.DataFrame()
+    if len(tsets_rows) < 1 or len(tasks_rows) < 1:
+        eprint('ERROR: No tasks or tasksets!! Everything was discarded!')
+        return 1
 
-    for d in tset_dirs:
-        tset_dir = args.in_dir + "/" + d
+    tasks_stats = pd.DataFrame(tasks_rows)
+    tsets_stats = pd.DataFrame(tsets_rows)
 
-        splits = d.split('_n')
+    tsets_cols_order = ['num_tasks', 'util', 'tset_idx']
+    tasks_cols_order = tsets_cols_order + ['idx']
 
-        splits = splits[1].split('_i')
-        ts_ntasks = splits[0]
+    # Sort the rows in ascending order according to these columns
+    tsets_stats = tsets_stats.sort_values(tsets_cols_order, ignore_index=True)
+    tasks_stats = tasks_stats.sort_values(tasks_cols_order, ignore_index=True)
 
-        splits = splits[1].split('_u')
-        ts_idx = splits[0]
+    # Sort the columns as well
+    tsets_stats = tsets_stats.reindex(columns=(
+        tsets_cols_order + list([c for c in tsets_stats.columns if c not in tsets_cols_order])))
+    tasks_stats = tasks_stats.reindex(columns=(
+        tasks_cols_order + list([c for c in tasks_stats.columns if c not in tasks_cols_order])))
 
-        splits = splits[1].split('.')
-        ts_util = float(splits[0] + '.' + splits[1])
+#     # To debug the dataframes
+#     print(f"""
+# ---- TASKSETS INFO ----
+# {tsets_stats}
+#
+# ---- TASKS INFO ----
+# {tasks_stats}
+# """)
 
-        n_u = {
-            'ntasks': ts_ntasks,
-            'util': ts_util,
-        }
+    tsets_out_file = args.out_file
+    tasks_out_file = args.out_file2
 
-        key = frozenset(n_u.items())
+    if tsets_out_file != '/dev/null':
+        print('Printing TASKSETS info')
+        if tsets_out_file == '/dev/stdout':
+            print('-------------------------')
+        tsets_stats.to_csv(
+            tsets_out_file,
+            sep='\t',
+            index=False,
+        )
+        if tsets_out_file == '/dev/stdout':
+            print('-------------------------')
 
-        if key not in rows:
-            rows[key] = {
-                'count': 0,
-                'misses': 0,
-                'miss-ratio': 0,
-                'minslack': float('inf'),
-            }
-        # --
+    if tasks_out_file != '/dev/null':
+        print('Printing TASKS info')
+        if tasks_out_file == '/dev/stdout':
+            print('-------------------------')
+        tasks_stats.to_csv(
+            tasks_out_file,
+            sep='\t',
+            index=False,
+        )
+        if tasks_out_file == '/dev/stdout':
+            print('-------------------------')
 
-        task_dirs = [d for d in os.listdir(tset_dir) if 'rt-app-task' in d]
-
-        for t in task_dirs:
-            task_log = tset_dir + '/' + t
-            # task_idx = t.split('-')[3].split('.')[0]
-
-            logs = pd.read_csv(task_log, delimiter=r"\s+")
-
-            rows[key]['count'] += logs['slack'].count()
-
-            thesemisses = logs['slack'].lt(0).sum()
-
-            rows[key]['misses'] += thesemisses
-
-            if thesemisses > 0 and args.print_misses:
-                eprint(task_log)
-
-            rows[key]['miss-ratio'] = \
-                rows[key]['misses'] / rows[key]['count']
-
-            m = logs['slack'].min()
-            rows[key]['minslack'] = \
-                m if m < rows[key]['minslack'] \
-                else rows[key]['minslack']
-        # --
-    # --
-
-    for key in rows:
-        n_u = dict(key)
-        data = {
-            'ntasks': n_u['ntasks'],
-            'util': n_u['util'],
-            **rows[key]
-        }
-        df = df.append(data, ignore_index=True)
-
-    df = df.sort_values(by=['ntasks', 'util'])
-    df.to_csv(
-        args.out_file,
-        sep='\t',
-        index=False,
-    )
     return 0
-#-- main
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
