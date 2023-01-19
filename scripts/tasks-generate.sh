@@ -175,8 +175,16 @@ function generate_taskset() {
         -q 400000 \
         -g 10000 \
         --round-C \
-        -f "%(C)d %(T)d\n"
+        -f "%(C)d %(T)d"
 
+}
+
+function check_runtimes() {
+    printf '%s' $(sed '/^[[:space:]]*$/d' <"$1" | awk ' { if ($1 < 4000) print nope } ' | wc -l)
+}
+
+function fix_runtimes() {
+    awk '{ print $1*10, $2*10 }'
 }
 
 # Checks that the total utilization provided by taskgen is
@@ -259,6 +267,10 @@ function check_utilization() {
     # run for. Must be between 0 and 1.
     GT_RT_FRACTION=.95
 
+    # The amount of runtime (in us) to remove from the task duration (after
+    # applying GT_RT_FRACTION). Must be non negative.
+    GT_RT_REMOVE=0
+
     # The minimum test duration in seconds.
     GT_RT_MIN_DURATION=20
 
@@ -323,7 +335,7 @@ function check_utilization() {
             for ((i = 0; i < "$GT_NUM_TASKSETS"; i++)); do
                 seed="${GT_SEEDS_LIST[$i]}"
 
-                printf 'Generating taskset with %02d tasks, util %.4f, index %02d, (seed %d)\n' \
+                printf 'Generating taskset with %02d tasks, util %.4f, index %02d, (seed %d)' \
                     "$num_tasks" "$util" "$i" "$seed"
 
                 # Printing to variable tset_file
@@ -337,19 +349,34 @@ function check_utilization() {
                 generate_taskset "$seed" "$num_tasks" "$util" \
                     >"$text_file" # 2>/dev/null
 
+                printf " Runtimes check:"
+                num_tasks_below_threshold=$(check_runtimes "$text_file")
+                if [ $num_tasks_below_threshold -gt 0 ]; then
+                    printf " had to fix!"
+                    tmpfile=$(mktemp)
+                    fix_runtimes <"$text_file" >"$tmpfile"
+                    cp "$tmpfile" "$text_file"
+                    rm "$tmpfile"
+                else
+                    printf " OK!"
+                fi
+
                 # # NOTE: this could be necessary if the tasks exceed the maximum
                 # check_utilization "$text_file" "$util"
 
                 "$SDIR/util/taskset2json.py" \
                     -r "$GT_RT_FRACTION" \
+                    -R "$GT_RT_REMOVE" \
                     -m "$GT_RT_MIN_DURATION" \
                     -M "$GT_RT_MAX_DURATION" \
                     -c "$GT_RT_CALIBRATION" \
                     -q "$max_quota" \
                     <"$text_file" >"$json_file"
-
                 # Option -l is not used anymore
                 # -l "$tset_name" \
+
+                printf '\n'
+
             done
         done
     done
@@ -381,6 +408,7 @@ export GT_UTILS_LIST=(${GT_UTILS_LIST[@]})
 export GT_SEED="${GT_SEED}"
 export GT_SEEDS_LIST=(${GT_SEEDS_LIST[@]})
 export GT_RT_FRACTION="${GT_RT_FRACTION}"
+export GT_RT_REMOVE="${GT_RT_REMOVE}"
 export GT_RT_MIN_DURATION="${GT_RT_MIN_DURATION}"
 export GT_RT_MAX_DURATION="${GT_RT_MAX_DURATION}"
 export GT_RT_CALIBRATION="${GT_RT_CALIBRATION}"

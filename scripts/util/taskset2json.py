@@ -3,6 +3,7 @@
 import math
 import json
 import argparse
+import parse
 
 import sys
 
@@ -41,6 +42,38 @@ def float_range(mini, maxi):
 #-- float_range
 
 
+def int_range(mini: int, maxi: int):
+    """
+    Return function handle of an argument type function for
+    ArgumentParser checking a int range: mini <= arg <= maxi
+        mini - minimum acceptable argument
+        maxi - maximum acceptable argument
+
+    Copyright (C): StackOverflow user Georg W.
+    https://stackoverflow.com/a/64259328/7030275
+
+    modified by: Gabriele Ara
+    """
+
+    # Define the function with default arguments
+    def float_range_checker(arg):
+        """
+        New Type function for argparse - a float within predefined range.
+        """
+        try:
+            f = int(arg)
+        except ValueError:
+            raise argparse.ArgumentTypeError("must be a floating point number")
+        if f < mini or f > maxi:
+            raise argparse.ArgumentTypeError(
+                "must be in range [" + str(mini) + " .. " + str(maxi)+"]")
+        return f
+
+    # Return function handle to checking function
+    return float_range_checker
+#-- float_range
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
 
@@ -59,6 +92,12 @@ def parse_args():
                         default='.95',
                         type=float_range(0, 1),
                         help="The fraction of the runtime it should actually run for",
+                        )
+
+    parser.add_argument('-R', '--runtime-remove',
+                        default='0',
+                        type=int_range(0, 100000),
+                        help="The amount to statically remove from each runtime [us]",
                         )
 
     parser.add_argument('-m', '--min-duration',
@@ -104,6 +143,7 @@ def lcm(a, b):
 
 
 def timer2secs(timer):
+    # From us to s
     return int(timer / 1000000.0)
 
 
@@ -111,16 +151,118 @@ def secs2timer(secs):
     return int(secs * 1000000.0)
 
 
+def fix_runtime(amount, args):
+    return int((amount * args.runtime_fraction) - args.runtime_remove)
+
+
+def fix_runtimes(taskset, args):
+    for task in taskset:
+        task['runtime'] = fix_runtime(task['runtime'], args)
+    return taskset
+
+
+def task_name(idx):
+    return 'task' + str(idx).zfill(2)
+
+
+def get_duration(taskset, args):
+    hyperperiod = get_hyperperiod(taskset)
+    hyperperiod = timer2secs(hyperperiod)
+    hyperperiod = max(args.min_duration, hyperperiod)
+    hyperperiod = min(args.max_duration, hyperperiod)
+    return hyperperiod
+
+
+def fix_taskset(taskset, args):
+    util = tot_util(taskset)
+    while util >= args.quota:
+        exceed = util - args.quota
+
+        runtime_max = 0
+        argmax = -1
+        found = False
+
+        # TODO: this fixing mechanism is not so great!
+
+        # Fix so that the utilization does not exceed the maximum quota!
+        for i, task in enumerate(taskset):
+            taskutil = task_util(task)
+            runtime_sub = int((exceed * task['period']) + 1)
+
+            if task['runtime'] > runtime_max:
+                runtime_max = task['runtime']
+                argmax = i
+
+            if taskutil > exceed and runtime_sub < task['runtime']:
+                found = True
+                task['runtime'] -= runtime_sub
+                break
+
+        if not found:
+            # Reduce the runtime of the biggest task and try again
+            taskset[argmax]['runtime'] = int(taskset[argmax]['runtime'] * .99)
+
+        # Re-calculate utilization
+        util = tot_util(taskset)
+
+    return taskset
+
+
+def warn_on_too_small(taskset):
+    for task in taskset:
+        if task['runtime'] < 2000:
+            eprint(f"WARN: there is a DL runtime equal to {task['runtime']}!")
+
+
+def parse_taskset(fname):
+    taskset = []
+    with open(fname, 'r') as infile:
+        for line in infile:
+            line = line.rstrip()
+            if not line:
+                continue  # Skip empty lines
+            # Read the two params into a dict
+            task_result = parse.parse("{runtime:d} {period:d}", line)
+            if task_result is None:
+                eprint(
+                    f"Error: invalid task specification: '{line}'!")
+                sys.exit(1)
+
+            # Get dictionary from parse result
+            taskset += [task_result.named]
+    return taskset
+
+
+def task_util(task):
+    return task['runtime'] / task['period']
+
+
+def tot_util(taskset):
+    util = 0.0
+    for task in taskset:
+        util += task_util(task)
+    return util
+
+
+def get_hyperperiod(taskset):
+    hyperperiod = 1
+    for task in taskset:
+        hyperperiod = lcm(hyperperiod, task['period'])
+    return hyperperiod
+
+
 def main():
     args = parse_args()
 
-    infile = open(args.infile, 'r')
-    outfile = open(args.outfile, 'w')
+    taskset = parse_taskset(args.infile)
+    taskset = fix_taskset(taskset, args)
+    warn_on_too_small(taskset)
+    duration = get_duration(taskset, args)
 
-    out = {
+    output_struct = {
         'tasks': {},
         'global': {
-            'duration': 0,  # set this parameter using the hyperperiod
+            'duration': duration,
             'default_policy': 'SCHED_DEADLINE',
             'calibration': args.calibration,
             'pi_enabled': False,
@@ -129,103 +271,26 @@ def main():
             'log_basename': 'rt-app',
             'log_size': 'auto',
             'gnuplot': False,
-        },
+        }
     }
 
-    i = 0
-    hyperperiod = 1
-    util = 0.0
-    for line in infile:
-        line = line.rstrip()
-        if not line:
-            continue
-        # For each nonempty line
-
-        # TODO: original implementation ordered by task period, is it needed?
-
-        values = line.split()
-        runtime = int(values[0])
-        period = int(values[1])
-        out['tasks']['task' + str(i).zfill(2)] = {
-            'run': int(runtime * args.runtime_fraction),
+    for i, task in enumerate(taskset):
+        output_struct['tasks'][task_name(i)] = {
+            'run': fix_runtime(task['runtime'], args),
             'timer': {
-                'period': period,
+                'period': task['period'],
                 'mode': 'absolute',
                 'ref': 'unique',
             },
-            'dl-runtime': runtime,
-            'dl-period': period,
+            'dl-runtime': task['runtime'],
+            'dl-period': task['period'],
             'delay': 500000,
         }
 
-        util += (runtime / period)
-        hyperperiod = lcm(hyperperiod, period)
-        i += 1
-    # for
+    with open(args.outfile, 'w') as outfile:
+        json.dump(output_struct, outfile, indent=2)
 
-    while util >= args.quota:
-        exceed = util - args.quota
-
-        umax = 0
-        uargmax = -1
-        found = False
-
-        # Fix so that the utilization does not exceed the maximum quota!
-        for j in range(i):
-            runtime = out['tasks']['task' + str(j).zfill(2)]['dl-runtime']
-            period = out['tasks']['task' + str(j).zfill(2)]['dl-period']
-
-            u = (runtime / period)
-            sub = int((exceed * period) + 1)
-
-            if u > umax:
-                umax = u
-                uargmax = j
-
-            if u > exceed and sub < runtime:
-                found = True
-                runtime -= sub
-                out['tasks']['task' + str(j).zfill(2)]['dl-runtime'] = runtime
-                break
-        # for
-
-        if not found:
-            # Reduce the utilization of the biggest task
-            j = uargmax
-            runtime = out['tasks']['task' + str(j).zfill(2)]['dl-runtime']
-            out['tasks']['task' + str(j).zfill(2)
-                         ]['dl-runtime'] = int(runtime * .99)
-            #eprint("DEBUG: was ", runtime, " became ", int(runtime * .99))
-        # if
-
-        # Re-calculate utilization
-        util = 0
-        for j in range(i):
-            runtime = out['tasks']['task' + str(j).zfill(2)]['dl-runtime']
-            period = out['tasks']['task' + str(j).zfill(2)]['dl-period']
-            util += (runtime / period)
-        # for
-    # while
-
-    # Update the run values (just in case the runtime was updated)
-    for j in range(i):
-        runtime = out['tasks']['task' + str(j).zfill(2)]['dl-runtime']
-        out['tasks']['task' +
-                     str(j).zfill(2)]['run'] = int(runtime * args.runtime_fraction)
-    # for
-
-    hyperperiod = timer2secs(hyperperiod)
-    hyperperiod = max(args.min_duration, hyperperiod)
-    hyperperiod = min(args.max_duration, hyperperiod)
-    out['global']['duration'] = hyperperiod
-    # out['global']['logdir'] += args.log_suffix
-
-    # eprint("Duration:", hyperperiod, 's')
-
-    json.dump(out, outfile, indent=2)
-
-    infile.close()
-    outfile.close()
+    return 0
 # main
 
 

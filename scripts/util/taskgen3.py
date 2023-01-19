@@ -1,7 +1,50 @@
 #!/usr/bin/env python3
 
+"""\
+A taskset generator for experiments with real-time task sets
+
+Copyright 2010 Paul Emberson, Roger Stafford, Robert Davis.
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+   1. Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY EXPRESS
+OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+EVENT SHALL THE AUTHORS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA,
+OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+The views and conclusions contained in the software and documentation are
+those of the authors and should not be interpreted as representing official
+policies, either expressed or implied, of Paul Emberson, Roger Stafford or
+Robert Davis.
+
+Includes Python implementation of Roger Stafford's randfixedsum implementation
+http://www.mathworks.com/matlabcentral/fileexchange/9700
+Adapted specifically for the purpose of taskset generation with fixed
+total utilisation value
+
+Please contact paule@rapitasystems.com or robdavis@cs.york.ac.uk if you have
+any questions regarding this software.
+"""
+
+
 import argparse
 import sys
+import os
 import textwrap
 import random
 import numpy as np
@@ -103,19 +146,59 @@ def gen_tasksets(options):
             print("")
 
 
+def escape_format_string(string: str):
+    return string.replace('%', '%%').replace('\\', '\\\\')
+
+
+def wrap_string(string: str):
+    return f"'{string}'"
+
+
+class RawDescriptionDefaultHelpFormatter(
+    argparse.RawTextHelpFormatter, argparse.ArgumentDefaultsHelpFormatter
+):
+    pass
+
+
 def main():
-    usage_str = "%prog [options]"
+    program_name = os.path.basename(sys.argv[0])
 
-    description_str = "This is a taskset generator intended for generating data for experiments with real-time schedulability tests and design space exploration tools.  The utilisation generation is done using Roger Stafford's randfixedsum algorithm.  A paper describing this tool was published at the WATERS 2010 workshop. Copyright 2010 Paul Emberson, Roger Stafford, Robert Davis. All rights reserved.  Run %prog --about for licensing information."
+    description_str = textwrap.dedent(f"""\
+        This is a taskset generator intended for generating data for experiments
+        with real-time schedulability tests and design space exploration tools.
 
-    epilog_str = "Examples:"
+        The utilisation generation is done using Roger Stafford's randfixedsum algorithm.
+
+        A paper describing this tool was published at the WATERS 2010 workshop.
+        Copyright 2010 Paul Emberson, Roger Stafford, Robert Davis.
+        All rights reserved.
+
+        Run {program_name} --about for licensing information.
+    """)
 
     # don't add help option as we will handle it ourselves
-    parser = argparse.ArgumentParser(usage=usage_str, description=description_str, epilog=epilog_str, add_help=False)
+    parser = argparse.ArgumentParser(
+        prog=program_name,
+        description=description_str,
+        add_help=True,
+        formatter_class=RawDescriptionDefaultHelpFormatter,
+        epilog=textwrap.dedent(
+            f"""\
+        examples:
 
-    parser.add_argument("-h", "--help", action="store_true", dest="help",
-                        default=False,
-                        help="Show this help message and exit")
+            Generate 5 tasksets of 10 tasks with loguniform periods
+            between 1000 and 100000.  Round execution times and output
+            a table of execution times and periods.
+
+                {program_name} -s 5 -n 10 -p 1000 -q 100000 -d logunif --round-C -f \"%(C)d %(T)d\\n\"
+
+            Print utilisation values from Stafford's randfixedsum
+            for 20 tasksets of 8 tasks, with one line per taskset,
+            rounded to 3 decimal places:
+
+                {program_name} -s 20 -n 8 -f \"%(Ugen).3f\"
+        """),
+    )
 
     parser.add_argument("--about", action="store_true", dest="about",
                         default=False,
@@ -124,27 +207,27 @@ def main():
     parser.add_argument("-u", "--taskset-utilisation",
                         metavar="UTIL", type=float, dest="util",
                         default="0.75",
-                        help="Set total taskset utilisation to UTIL [%default]")
+                        help="Set total taskset utilisation to UTIL")
     parser.add_argument("-n", "--num-tasks",
                         metavar="N", type=int, dest="n",
                         default="5",
-                        help="Produce tasksets of size N [%default]")
+                        help="Produce tasksets of size N")
     parser.add_argument("-s", "--num-sets",
                         metavar="SETS", type=int, dest="nsets",
                         default="3",
-                        help="Produce SETS tasksets [%default]")
+                        help="Produce SETS tasksets")
     parser.add_argument("-S", "--seed",
                         metavar="SEED", type=int, dest="seed",
                         default="0",
-                        help="Set the random number generator seed [%default]")
+                        help="Set the random number generator seed")
     parser.add_argument("-d", "--period-distribution",
                         metavar="PDIST", type=str, dest="perdist",
                         default="logunif",
-                        help="Choose period distribution to be 'unif' or 'logunif' [%default]")
+                        help="Choose period distribution to be 'unif' or 'logunif'")
     parser.add_argument("-p", "--period-min",
                         metavar="PMIN", type=int, dest="permin",
                         default="1000",
-                        help="Set minimum period value to PMIN [%default]")
+                        help="Set minimum period value to PMIN")
     parser.add_argument("-q", "--period-max",
                         metavar="PMAX", type=int, dest="permax",
                         default=None,
@@ -156,25 +239,28 @@ def main():
 
     parser.add_argument("--round-C", action="store_true", dest="round_C",
                         default=False,
-                        help="Round execution times to nearest integer [%default]")
+                        help="Round execution times to nearest integer")
 
-    format_default = '%(Ugen)f %(U)f %(C).2f %(T)d\\n'
-    format_help = "Specify output format as a Python template string.  The following variables are available: Ugen - the task utilisation value generated by Stafford's randfixedsum algorithm, T - the generated task period value, C - the generated task execution time, U - the actual utilisation equal to C/T which will differ from Ugen if the --round-C option is used.  See below for further examples.  A new line is always inserted between tasksets. [" + format_default + "]"
-
+    format_help = textwrap.dedent("""\
+        Specify output format as a Python templace string.
+        The following variables are available:
+            Ugen - the task utilisation value generated by Stafford's randfixedsum algorithm,
+            T    - the generated task period value,
+            C    - the generated task execution time,
+            U    - the actual utilisation equal to C/T which will differ from Ugen if the --round-C option is used.
+        See below for further examples.
+        A new line is always inserted between tasksets.
+    """)
 
     parser.add_argument("-f", "--output-format",
                         metavar="FORMAT", type=str, dest="format",
-                        default='%(Ugen)f %(U)f %(C).2f %(T)d\n',
+                        default='%(Ugen)f %(U)f %(C).2f %(T)d\\n',
                         help=format_help)
 
     args = parser.parse_args()
 
     if args.about:
         print(__doc__)
-        return 0
-
-    if args.help:
-        print_help(parser)
         return 0
 
     if args.n < 1:
@@ -239,22 +325,7 @@ def print_help(parser):
 
     print("")
 
-    example_desc = \
-        "Generate 5 tasksets of 10 tasks with loguniform periods " + \
-        "between 1000 and 100000.  Round execution times and output " + \
-        "a table of execution times and periods."
-    print(textwrap.fill(example_desc, 75))
-    print("    " + parser.get_prog_name() + " -s 5 -n 10 -p 1000 -q 100000 -d logunif --round-C -f \"%(C)d %(T)d\\n\"")
 
-    print("")
-
-    example_desc = \
-        "Print utilisation values from Stafford's randfixedsum " + \
-        "for 20 tasksets of 8 tasks, with one line per taskset, " + \
-        "rounded to 3 decimal places:"
-
-    print(textwrap.fill(example_desc, 75))
-    print("    " + parser.get_prog_name() + " -s 20 -n 8 -f \"%(Ugen).3f\"")
 
 
 if __name__ == "__main__":
