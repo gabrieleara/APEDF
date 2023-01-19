@@ -46,6 +46,10 @@ class TooShortException(Exception):
     pass
 
 
+class AllTasksSkippedException(Exception):
+    pass
+
+
 class OverrunException(Exception):
     pass
 
@@ -75,8 +79,6 @@ def parse_task(task_logfile):
     for field in STATIC_FIELDS:
         task_info[field] = task_log[field][0]
 
-    # FIXME: log thrown exceptions
-
     # For now we skip all tasks with not enough runtime
     if task_info['c_duration'] < 5000 and DISCARD_SMALL:
         raise TooShortException
@@ -88,6 +90,8 @@ def parse_task(task_logfile):
 
     # Count the number of overruns, if positive of course we have misses!
     if task_log['exec_ratio'].ge(1).count() > 0 and DISCARD_OVERRUN:
+        eprint(
+            f"{task_log['exec_ratio'].ge(1).count()} / {task_log['slack'].count()} !!")
         raise OverrunException
 
     # If we get here, everything should be alright (exception thrown by other
@@ -154,7 +158,15 @@ def parse_taskset(tset_dir):
     task_dirs = [d for d in os.listdir(tset_dir) if 'rt-app-task' in d]
     for tdir in task_dirs:
         # This function may raise an exception, which will make us skip this taskset
-        tstats = parse_task(os.path.join(tset_dir, tdir))
+
+        # FIX: for now, tasks that run for more than their budget will NOT be
+        # counted, but will not disqualify the taskset entirely
+        try:
+            tstats = parse_task(os.path.join(tset_dir, tdir))
+        except (TooShortException, OverrunException) as error:
+            eprint(
+                f"WARN: {type(error).__name__}, skipping {os.path.join(tset_dir, tdir)} ...")
+            continue
 
         tstats = {
             **tset_info,
@@ -171,7 +183,10 @@ def parse_taskset(tset_dir):
         tset_stats['maxslack'] = max(
             tstats['maxslack'], tset_stats['maxslack'])
 
-    tset_stats['miss_ratio'] = tset_stats['misses'] / tset_stats['count']
+    try:
+        tset_stats['miss_ratio'] = tset_stats['misses'] / tset_stats['count']
+    except ZeroDivisionError:
+        raise AllTasksSkippedException
 
     # 1. The stats of the whole taskset
     # 2. List of the stats of each task
@@ -204,7 +219,7 @@ def main():
         try:
             tset_stats, tasks_stats = parse_taskset(
                 os.path.join(args.in_dir, tset_dir))
-        except (TooShortException, OverrunException) as error:
+        except (TooShortException, OverrunException, AllTasksSkippedException) as error:
             eprint(
                 f"WARN: {type(error).__name__}, skipping {tset_dir} ...")
             continue
