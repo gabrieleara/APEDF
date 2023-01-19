@@ -1,69 +1,69 @@
 {
   "tasks": {
     "task00": {
-      "run": 351590,
+      "run": 176795,
       "timer": {
-        "period": 1000000,
+        "period": 500000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 372200,
-      "dl-period": 1000000,
+      "dl-runtime": 186100,
+      "dl-period": 500000,
       "delay": 500000
     },
     "task01": {
-      "run": 9846,
+      "run": 4235,
       "timer": {
-        "period": 200000,
+        "period": 100000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 12470,
-      "dl-period": 200000,
+      "dl-runtime": 6235,
+      "dl-period": 100000,
       "delay": 500000
     },
     "task02": {
-      "run": 1012970,
+      "run": 507485,
       "timer": {
-        "period": 1100000,
+        "period": 550000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 1068390,
-      "dl-period": 1100000,
+      "dl-runtime": 534195,
+      "dl-period": 550000,
       "delay": 500000
     },
     "task03": {
-      "run": 294514,
+      "run": 148257,
       "timer": {
-        "period": 1100000,
+        "period": 550000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 312120,
-      "dl-period": 1100000,
+      "dl-runtime": 156060,
+      "dl-period": 550000,
       "delay": 500000
     },
     "task04": {
-      "run": 301477,
+      "run": 151738,
       "timer": {
-        "period": 900000,
+        "period": 450000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 319450,
-      "dl-period": 900000,
+      "dl-runtime": 159725,
+      "dl-period": 450000,
       "delay": 500000
     },
     "task05": {
-      "run": 346260,
+      "run": 174130,
       "timer": {
-        "period": 1200000,
+        "period": 600000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 366590,
-      "dl-period": 1200000,
+      "dl-runtime": 183295,
+      "dl-period": 600000,
       "delay": 500000
     }
   },

@@ -1,7 +1,7 @@
 {
   "tasks": {
     "task00": {
-      "run": 260864,
+      "run": 262864,
       "timer": {
         "period": 360000,
         "mode": "absolute",
@@ -12,7 +12,7 @@
       "delay": 500000
     },
     "task01": {
-      "run": 79107,
+      "run": 81107,
       "timer": {
         "period": 200000,
         "mode": "absolute",
@@ -23,7 +23,7 @@
       "delay": 500000
     },
     "task02": {
-      "run": 49807,
+      "run": 51807,
       "timer": {
         "period": 70000,
         "mode": "absolute",
@@ -34,7 +34,7 @@
       "delay": 500000
     },
     "task03": {
-      "run": 32176,
+      "run": 33975,
       "timer": {
         "period": 400000,
         "mode": "absolute",
@@ -45,7 +45,7 @@
       "delay": 500000
     },
     "task04": {
-      "run": 3297,
+      "run": 3576,
       "timer": {
         "period": 60000,
         "mode": "absolute",
@@ -56,7 +56,7 @@
       "delay": 500000
     },
     "task05": {
-      "run": 13464,
+      "run": 14278,
       "timer": {
         "period": 30000,
         "mode": "absolute",

@@ -1,69 +1,69 @@
 {
   "tasks": {
     "task00": {
-      "run": 367882,
-      "timer": {
-        "period": 1000000,
-        "mode": "absolute",
-        "ref": "unique"
-      },
-      "dl-runtime": 389350,
-      "dl-period": 1000000,
-      "delay": 500000
-    },
-    "task01": {
-      "run": 20239,
+      "run": 147953,
       "timer": {
         "period": 400000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 23410,
+      "dl-runtime": 155740,
       "dl-period": 400000,
       "delay": 500000
     },
-    "task02": {
-      "run": 9932,
+    "task01": {
+      "run": 7364,
       "timer": {
-        "period": 1100000,
+        "period": 160000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 12560,
-      "dl-period": 1100000,
+      "dl-runtime": 9364,
+      "dl-period": 160000,
+      "delay": 500000
+    },
+    "task02": {
+      "run": 3024,
+      "timer": {
+        "period": 440000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 5024,
+      "dl-period": 440000,
       "delay": 500000
     },
     "task03": {
-      "run": 307643,
+      "run": 123857,
       "timer": {
-        "period": 1100000,
+        "period": 440000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 325940,
-      "dl-period": 1100000,
+      "dl-runtime": 130376,
+      "dl-period": 440000,
       "delay": 500000
     },
     "task04": {
-      "run": 318406,
+      "run": 128162,
       "timer": {
-        "period": 900000,
+        "period": 360000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 337270,
-      "dl-period": 900000,
+      "dl-runtime": 134908,
+      "dl-period": 360000,
       "delay": 500000
     },
     "task05": {
-      "run": 362420,
+      "run": 145768,
       "timer": {
-        "period": 1200000,
+        "period": 480000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 383600,
-      "dl-period": 1200000,
+      "dl-runtime": 153440,
+      "dl-period": 480000,
       "delay": 500000
     }
   },

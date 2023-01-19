@@ -6,6 +6,7 @@ import argparse
 import parse
 
 import sys
+import numpy as np
 
 
 def eprint(*args, **kwargs):
@@ -152,7 +153,9 @@ def secs2timer(secs):
 
 
 def fix_runtime(amount, args):
-    return int((amount * args.runtime_fraction) - args.runtime_remove)
+    fixed1 = int(amount * args.runtime_fraction)
+    fixed2 = int(amount - args.runtime_remove)
+    return min(fixed1, fixed2)
 
 
 def fix_runtimes(taskset, args):
@@ -251,6 +254,55 @@ def get_hyperperiod(taskset):
     return hyperperiod
 
 
+class u64(np.uint64):
+    pass
+
+
+class TooBigTaskRuntimeError(Exception):
+    pass
+
+
+class TasksetCannotBeAcceptedError(Exception):
+    pass
+
+
+DL_BW_SHIFT = u64(20)
+DL_BW_UNIT = u64(1) << DL_BW_SHIFT
+DL_RATIO_SHIFT = u64(8)
+DL_MAX_BW_BITS = u64(64) - DL_BW_SHIFT
+DL_MAX_BW = (u64(1) << DL_MAX_BW_BITS) - u64(1)
+
+
+def dl_to_ratio(runtime: u64, period: u64):
+    if runtime > DL_MAX_BW:
+        raise TooBigTaskRuntimeError(
+            f"{runtime} is too big! Maximum allowed value is {DL_MAX_BW}!")
+    return (runtime << DL_BW_SHIFT) // period
+
+
+DL_NSEC_PER_USEC = u64(1000)
+DL_SYSCTL_SCHED_RT_RUNTIME = u64(950000)
+DL_SYSCTL_SCHED_RT_PERIOD = u64(1000000)
+DL_GLOBAL_RUNTIME = DL_SYSCTL_SCHED_RT_RUNTIME * DL_NSEC_PER_USEC
+DL_GLOBAL_PERIOD = DL_SYSCTL_SCHED_RT_PERIOD * DL_NSEC_PER_USEC
+DL_GLOBAL_BW = dl_to_ratio(DL_GLOBAL_RUNTIME, DL_GLOBAL_PERIOD)
+
+
+def check_dl_params(taskset, num_cpus):
+    # This check is just to be EXTRA SURE that the taskset will be accepted by
+    # SCHED_DEADLINE.
+    #
+    # It performs the same exact calculation that SCHED_DEADLINE does when
+    # testing for tasks acceptance.
+    total_bw = u64(0)
+    for task in taskset:
+        total_bw += dl_to_ratio(u64(task['runtime']), u64(task['period']))
+
+    if DL_GLOBAL_BW * num_cpus < total_bw:
+        raise TasksetCannotBeAcceptedError(
+            f"The bandwidth {total_bw} is greater than {DL_GLOBAL_BW * num_cpus}")
+
+
 def main():
     args = parse_args()
 
@@ -258,6 +310,9 @@ def main():
     taskset = fix_taskset(taskset, args)
     warn_on_too_small(taskset)
     duration = get_duration(taskset, args)
+
+    # FIXME: change with argument for number of CPUs
+    check_dl_params(taskset, 4)
 
     output_struct = {
         'tasks': {},

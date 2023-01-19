@@ -184,7 +184,21 @@ function check_runtimes() {
 }
 
 function fix_runtimes() {
-    awk '{ print $1*10, $2*10 }'
+    local infile=$1
+    local min_value
+    local multiplier
+
+    min_value=$(sort -nk 1 "$infile" | head -n 1 | cut -d' ' -f1)
+    # echo "MIN_VALUE = $min_value" >&2
+    multiplier=$(bc <<EOF
+define ceil_divide(dividend, divisor) {
+    return (dividend + divisor - 1) / divisor
+}
+ceil_divide(5000, $min_value)
+EOF
+)
+    # echo "MULTIPLIER = $multiplier" >&2
+    awk -v multiplier=$multiplier  '{ print $1*multiplier, $2*multiplier }' <"$1"
 }
 
 # Checks that the total utilization provided by taskgen is
@@ -263,12 +277,17 @@ function check_utilization() {
     # mantaining the same GT_SEED value.
     GT_SEEDS_LIST=()
 
-    # The fraction of the runtime the task should actually
-    # run for. Must be between 0 and 1.
+    # The maximum fraction of the reserved runtime the task can actually run
+    # for. Must be between 0 and 1.
     GT_RT_FRACTION=.95
 
-    # The amount of runtime (in us) to remove from the task duration (after
-    # applying GT_RT_FRACTION). Must be non negative.
+    # The minimum amount of runtime (in us) to remove from the task duration
+    # starting from the reserved runtime. Must be non negative.
+    #
+    # In practice, applying the GT_RT_FRACTION and the GT_RT_REMOVE gives us two
+    # different runtimes. The smallest of the two is used to specify the amount
+    # the task will run for, so that both rules are satisfied at the same time
+    # without removing too runtime.
     GT_RT_REMOVE=0
 
     # The minimum test duration in seconds.
@@ -354,7 +373,7 @@ function check_utilization() {
                 if [ $num_tasks_below_threshold -gt 0 ]; then
                     printf " had to fix!"
                     tmpfile=$(mktemp)
-                    fix_runtimes <"$text_file" >"$tmpfile"
+                    fix_runtimes "$text_file" >"$tmpfile"
                     cp "$tmpfile" "$text_file"
                     rm "$tmpfile"
                 else

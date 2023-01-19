@@ -1,91 +1,91 @@
 {
   "tasks": {
     "task00": {
-      "run": 21579,
+      "run": 3958,
       "timer": {
-        "period": 500000,
+        "period": 120000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 24820,
-      "dl-period": 500000,
+      "dl-runtime": 5958,
+      "dl-period": 120000,
       "delay": 500000
     },
     "task01": {
-      "run": 817555,
+      "run": 245866,
       "timer": {
-        "period": 1300000,
+        "period": 390000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 862690,
-      "dl-period": 1300000,
+      "dl-runtime": 258807,
+      "dl-period": 390000,
       "delay": 500000
     },
     "task02": {
-      "run": 213526,
+      "run": 64657,
       "timer": {
-        "period": 300000,
+        "period": 90000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 226870,
-      "dl-period": 300000,
+      "dl-runtime": 68061,
+      "dl-period": 90000,
       "delay": 500000
     },
     "task03": {
-      "run": 413530,
+      "run": 124659,
       "timer": {
-        "period": 1200000,
+        "period": 360000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 437400,
-      "dl-period": 1200000,
+      "dl-runtime": 131220,
+      "dl-period": 360000,
       "delay": 500000
     },
     "task04": {
-      "run": 65345,
+      "run": 19267,
       "timer": {
-        "period": 300000,
+        "period": 90000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 70890,
-      "dl-period": 300000,
+      "dl-runtime": 21267,
+      "dl-period": 90000,
       "delay": 500000
     },
     "task05": {
-      "run": 213887,
+      "run": 64766,
       "timer": {
-        "period": 500000,
+        "period": 150000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 227250,
-      "dl-period": 500000,
+      "dl-runtime": 68175,
+      "dl-period": 150000,
       "delay": 500000
     },
     "task06": {
-      "run": 592139,
+      "run": 178241,
       "timer": {
-        "period": 3800000,
+        "period": 1140000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 625410,
-      "dl-period": 3800000,
+      "dl-runtime": 187623,
+      "dl-period": 1140000,
       "delay": 500000
     },
     "task07": {
-      "run": 268037,
+      "run": 81011,
       "timer": {
-        "period": 400000,
+        "period": 120000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 284250,
-      "dl-period": 400000,
+      "dl-runtime": 85275,
+      "dl-period": 120000,
       "delay": 500000
     }
   },
