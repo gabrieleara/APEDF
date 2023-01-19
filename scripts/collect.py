@@ -32,7 +32,7 @@ def arguments_parser():
                         )
     parser.add_argument('-D', "--discard-overrun",
                         action='store_true',
-                        help="Discard tasksets for which there is at least one overrun (exec time greather than c_runtime)",
+                        help="Discard tasksets for which there is at least one overrun (exec time greather than dl_runtime)",
                         )
     return parser
 
@@ -68,13 +68,25 @@ def parse_task(task_logfile):
     # - end:        DYNAMIC [us]    absolute end time
     # - rel_st      DYNAMIC [us]    start time of a phase relatively to the beg of the use case
     # - slack       DYNAMIC [us]    remaining time before the task deadline
-    # - c_duration  STATIC  [us]    expected execution time         [SCHED_DEADLINE parameter]
-    # - c_period    STATIC  [us]    expected activation period          [SCHED_DEADLINE parameter]
+    # - c_duration  STATIC  [us]    expected execution time
+    # - c_period    STATIC  [us]    expected activation period
     # - wu_lat      DYNAMIC [us]    sum of wakeup latencies after timer events
     # - cpu         DYNAMIC         CPU id where it executed
+    # - freq        DYNAMIC         CPU frequency
+    # - dl_runtime  STATIC  [us]    SCHED_DEADLINE parameter
+    # - dl_period   STATIC  [us]    SCHED_DEADLINE parameter
+    # - dl_deadline STATIC  [us]    SCHED_DEADLINE parameter
 
     # Collapse all static fields in a more accessible struct
-    STATIC_FIELDS = ['idx', 'perf', 'c_duration', 'c_period', ]
+    STATIC_FIELDS = [
+        'idx',
+        'perf',
+        'c_duration',
+        'c_period',
+        'dl_runtime',
+        'dl_period',
+        'dl_deadline',
+    ]
     task_info = {}
     for field in STATIC_FIELDS:
         task_info[field] = task_log[field][0]
@@ -86,20 +98,23 @@ def parse_task(task_logfile):
     # Extra fields:
     # - exec_ratio: ratio between the expected runtime (reservation) and the
     #               actual one (if >= 1 we had an overrun!)
-    task_log['exec_ratio'] = task_log['run'] / task_log['c_duration']
+    task_log['exec_ratio_to_expected'] = task_log['run'] / task_log['c_duration']
+    task_log['exec_ratio_to_reservation'] = task_log['run'] / task_log['dl_runtime']
 
     # Count the number of overruns, if positive of course we have misses!
-    if task_log['exec_ratio'].ge(1).count() > 0 and DISCARD_OVERRUN:
+    num_overruns = task_log['exec_ratio_to_reservation'].ge(1).count()
+    # Count all rows
+    count = task_log['slack'].count()
+    if num_overruns > 0 and DISCARD_OVERRUN:
         eprint(
-            f"{task_log['exec_ratio'].ge(1).count()} / {task_log['slack'].count()} !!")
+            f"{num_overruns} / {count} !!")
         raise OverrunException
 
     # If we get here, everything should be alright (exception thrown by other
     # tasks must be taken into account in the taskset parser function, so that
     # we skip those tasks)
 
-    # Count all rows and all the ones with a negative slack
-    count = task_log['slack'].count()
+    # Count all rows with a negative slack and calculate miss ratio
     misses = task_log[task_log['slack'] < 0]['slack'].count()
     miss_ratio = misses / count
     minslack = task_log['slack'].min()
