@@ -1,0 +1,81 @@
+{
+  "tasks": {
+    "task00": {
+      "run": 27507,
+      "timer": {
+        "period": 300000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 31060,
+      "dl-period": 300000,
+      "delay": 500000
+    },
+    "task01": {
+      "run": 501281,
+      "timer": {
+        "period": 1600000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 529770,
+      "dl-period": 1600000,
+      "delay": 500000
+    },
+    "task02": {
+      "run": 91432,
+      "timer": {
+        "period": 1300000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 98350,
+      "dl-period": 1300000,
+      "delay": 500000
+    },
+    "task03": {
+      "run": 715649,
+      "timer": {
+        "period": 1300000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 755420,
+      "dl-period": 1300000,
+      "delay": 500000
+    },
+    "task04": {
+      "run": 108181,
+      "timer": {
+        "period": 2900000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 115980,
+      "dl-period": 2900000,
+      "delay": 500000
+    },
+    "task05": {
+      "run": 142181,
+      "timer": {
+        "period": 900000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 151770,
+      "dl-period": 900000,
+      "delay": 500000
+    }
+  },
+  "global": {
+    "duration": 30,
+    "default_policy": "SCHED_DEADLINE",
+    "calibration": 92,
+    "pi_enabled": false,
+    "lock_pages": true,
+    "logdir": "/tmp/rt-app-logs",
+    "log_basename": "rt-app",
+    "log_size": "auto",
+    "gnuplot": false
+  }
+}

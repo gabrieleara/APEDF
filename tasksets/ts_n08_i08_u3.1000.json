@@ -1,0 +1,103 @@
+{
+  "tasks": {
+    "task00": {
+      "run": 58496,
+      "timer": {
+        "period": 200000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 63680,
+      "dl-period": 200000,
+      "delay": 500000
+    },
+    "task01": {
+      "run": 18852,
+      "timer": {
+        "period": 300000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 21950,
+      "dl-period": 300000,
+      "delay": 500000
+    },
+    "task02": {
+      "run": 17779,
+      "timer": {
+        "period": 200000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 20820,
+      "dl-period": 200000,
+      "delay": 500000
+    },
+    "task03": {
+      "run": 1739692,
+      "timer": {
+        "period": 2000000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 1833360,
+      "dl-period": 2000000,
+      "delay": 500000
+    },
+    "task04": {
+      "run": 18719,
+      "timer": {
+        "period": 1000000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 21810,
+      "dl-period": 1000000,
+      "delay": 500000
+    },
+    "task05": {
+      "run": 328856,
+      "timer": {
+        "period": 600000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 348270,
+      "dl-period": 600000,
+      "delay": 500000
+    },
+    "task06": {
+      "run": 169066,
+      "timer": {
+        "period": 300000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 180070,
+      "dl-period": 300000,
+      "delay": 500000
+    },
+    "task07": {
+      "run": 320620,
+      "timer": {
+        "period": 700000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 339600,
+      "dl-period": 700000,
+      "delay": 500000
+    }
+  },
+  "global": {
+    "duration": 30,
+    "default_policy": "SCHED_DEADLINE",
+    "calibration": 92,
+    "pi_enabled": false,
+    "lock_pages": true,
+    "logdir": "/tmp/rt-app-logs",
+    "log_basename": "rt-app",
+    "log_size": "auto",
+    "gnuplot": false
+  }
+}

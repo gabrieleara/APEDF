@@ -1,0 +1,191 @@
+{
+  "tasks": {
+    "task00": {
+      "run": 97721,
+      "timer": {
+        "period": 400000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 104970,
+      "dl-period": 400000,
+      "delay": 500000
+    },
+    "task01": {
+      "run": 13941,
+      "timer": {
+        "period": 1500000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 16780,
+      "dl-period": 1500000,
+      "delay": 500000
+    },
+    "task02": {
+      "run": 23621,
+      "timer": {
+        "period": 700000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 26970,
+      "dl-period": 700000,
+      "delay": 500000
+    },
+    "task03": {
+      "run": 19261,
+      "timer": {
+        "period": 500000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 22380,
+      "dl-period": 500000,
+      "delay": 500000
+    },
+    "task04": {
+      "run": 500920,
+      "timer": {
+        "period": 3300000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 529390,
+      "dl-period": 3300000,
+      "delay": 500000
+    },
+    "task05": {
+      "run": 107791,
+      "timer": {
+        "period": 1300000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 115570,
+      "dl-period": 1300000,
+      "delay": 500000
+    },
+    "task06": {
+      "run": 16002,
+      "timer": {
+        "period": 400000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 18950,
+      "dl-period": 400000,
+      "delay": 500000
+    },
+    "task07": {
+      "run": 11366,
+      "timer": {
+        "period": 300000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 14070,
+      "dl-period": 300000,
+      "delay": 500000
+    },
+    "task08": {
+      "run": 16154,
+      "timer": {
+        "period": 800000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 19110,
+      "dl-period": 800000,
+      "delay": 500000
+    },
+    "task09": {
+      "run": 17988,
+      "timer": {
+        "period": 700000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 21040,
+      "dl-period": 700000,
+      "delay": 500000
+    },
+    "task10": {
+      "run": 76916,
+      "timer": {
+        "period": 300000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 83070,
+      "dl-period": 300000,
+      "delay": 500000
+    },
+    "task11": {
+      "run": 12601,
+      "timer": {
+        "period": 4300000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 15370,
+      "dl-period": 4300000,
+      "delay": 500000
+    },
+    "task12": {
+      "run": 353205,
+      "timer": {
+        "period": 2200000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 373900,
+      "dl-period": 2200000,
+      "delay": 500000
+    },
+    "task13": {
+      "run": 32086,
+      "timer": {
+        "period": 1200000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 35880,
+      "dl-period": 1200000,
+      "delay": 500000
+    },
+    "task14": {
+      "run": 20296,
+      "timer": {
+        "period": 400000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 23470,
+      "dl-period": 400000,
+      "delay": 500000
+    },
+    "task15": {
+      "run": 11072,
+      "timer": {
+        "period": 2100000,
+        "mode": "absolute",
+        "ref": "unique"
+      },
+      "dl-runtime": 13760,
+      "dl-period": 2100000,
+      "delay": 500000
+    }
+  },
+  "global": {
+    "duration": 30,
+    "default_policy": "SCHED_DEADLINE",
+    "calibration": 92,
+    "pi_enabled": false,
+    "lock_pages": true,
+    "logdir": "/tmp/rt-app-logs",
+    "log_basename": "rt-app",
+    "log_size": "auto",
+    "gnuplot": false
+  }
+}
