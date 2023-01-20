@@ -1,69 +1,69 @@
 {
   "tasks": {
     "task00": {
-      "run": 3297,
+      "run": 24483,
       "timer": {
-        "period": 30000,
+        "period": 150000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 5297,
-      "dl-period": 30000,
+      "dl-runtime": 26483,
+      "dl-period": 150000,
       "delay": 500000
     },
     "task01": {
-      "run": 47755,
+      "run": 167143,
       "timer": {
-        "period": 160000,
+        "period": 560000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 50269,
-      "dl-period": 160000,
+      "dl-runtime": 175941,
+      "dl-period": 560000,
       "delay": 500000
     },
     "task02": {
-      "run": 102657,
+      "run": 379046,
       "timer": {
-        "period": 130000,
+        "period": 480000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 108061,
-      "dl-period": 130000,
+      "dl-runtime": 398996,
+      "dl-period": 480000,
       "delay": 500000
     },
     "task03": {
-      "run": 78495,
+      "run": 289830,
       "timer": {
-        "period": 130000,
+        "period": 480000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 82627,
-      "dl-period": 130000,
+      "dl-runtime": 305085,
+      "dl-period": 480000,
       "delay": 500000
     },
     "task04": {
-      "run": 250920,
+      "run": 796024,
       "timer": {
-        "period": 290000,
+        "period": 920000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 264127,
-      "dl-period": 290000,
+      "dl-runtime": 837921,
+      "dl-period": 920000,
       "delay": 500000
     },
     "task05": {
-      "run": 18848,
+      "run": 81424,
       "timer": {
-        "period": 90000,
+        "period": 370000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 20848,
-      "dl-period": 90000,
+      "dl-runtime": 85710,
+      "dl-period": 370000,
       "delay": 500000
     }
   },

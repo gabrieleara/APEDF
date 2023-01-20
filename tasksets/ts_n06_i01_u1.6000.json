@@ -1,69 +1,69 @@
 {
   "tasks": {
     "task00": {
-      "run": 3194,
+      "run": 8387,
       "timer": {
-        "period": 160000,
+        "period": 320000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 5194,
-      "dl-period": 160000,
+      "dl-runtime": 10387,
+      "dl-period": 320000,
       "delay": 500000
     },
     "task01": {
-      "run": 10320,
+      "run": 28800,
       "timer": {
-        "period": 40000,
+        "period": 100000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 12320,
-      "dl-period": 40000,
+      "dl-runtime": 30800,
+      "dl-period": 100000,
       "delay": 500000
     },
     "task02": {
-      "run": 571309,
+      "run": 842680,
       "timer": {
-        "period": 800000,
+        "period": 1180000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 601378,
-      "dl-period": 800000,
+      "dl-runtime": 887032,
+      "dl-period": 1180000,
       "delay": 500000
     },
     "task03": {
-      "run": 14276,
+      "run": 30552,
       "timer": {
-        "period": 200000,
+        "period": 400000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 16276,
-      "dl-period": 200000,
+      "dl-runtime": 32552,
+      "dl-period": 400000,
       "delay": 500000
     },
     "task04": {
-      "run": 177691,
+      "run": 278792,
       "timer": {
-        "period": 580000,
+        "period": 910000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 187044,
-      "dl-period": 580000,
+      "dl-runtime": 293466,
+      "dl-period": 910000,
       "delay": 500000
     },
     "task05": {
-      "run": 12552,
+      "run": 27105,
       "timer": {
-        "period": 140000,
+        "period": 280000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 14552,
-      "dl-period": 140000,
+      "dl-runtime": 29105,
+      "dl-period": 280000,
       "delay": 500000
     }
   },

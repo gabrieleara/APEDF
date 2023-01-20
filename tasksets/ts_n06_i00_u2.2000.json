@@ -1,69 +1,69 @@
 {
   "tasks": {
     "task00": {
-      "run": 203708,
+      "run": 616486,
       "timer": {
-        "period": 380000,
+        "period": 1150000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 214430,
-      "dl-period": 380000,
+      "dl-runtime": 648933,
+      "dl-period": 1150000,
       "delay": 500000
     },
     "task01": {
-      "run": 8385,
+      "run": 49326,
       "timer": {
-        "period": 20000,
+        "period": 100000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 10385,
-      "dl-period": 20000,
+      "dl-runtime": 51923,
+      "dl-period": 100000,
       "delay": 500000
     },
     "task02": {
-      "run": 22449,
+      "run": 72884,
       "timer": {
-        "period": 290000,
+        "period": 910000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 24449,
-      "dl-period": 290000,
+      "dl-runtime": 76720,
+      "dl-period": 910000,
       "delay": 500000
     },
     "task03": {
-      "run": 23840,
+      "run": 88373,
       "timer": {
-        "period": 150000,
+        "period": 540000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 25840,
-      "dl-period": 150000,
+      "dl-runtime": 93025,
+      "dl-period": 540000,
       "delay": 500000
     },
     "task04": {
-      "run": 18094,
+      "run": 76358,
       "timer": {
-        "period": 80000,
+        "period": 320000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 20094,
-      "dl-period": 80000,
+      "dl-runtime": 80377,
+      "dl-period": 320000,
       "delay": 500000
     },
     "task05": {
-      "run": 10174,
+      "run": 69394,
       "timer": {
-        "period": 20000,
+        "period": 120000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 12174,
-      "dl-period": 20000,
+      "dl-runtime": 73047,
+      "dl-period": 120000,
       "delay": 500000
     }
   },

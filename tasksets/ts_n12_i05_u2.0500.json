@@ -1,135 +1,135 @@
 {
   "tasks": {
     "task00": {
-      "run": 129622,
+      "run": 11306,
       "timer": {
-        "period": 500000,
+        "period": 130000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 136445,
-      "dl-period": 500000,
+      "dl-runtime": 13306,
+      "dl-period": 130000,
       "delay": 500000
     },
     "task01": {
-      "run": 169394,
+      "run": 20776,
       "timer": {
-        "period": 1250000,
+        "period": 560000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 178310,
-      "dl-period": 1250000,
+      "dl-runtime": 22776,
+      "dl-period": 560000,
       "delay": 500000
     },
     "task02": {
-      "run": 450798,
+      "run": 60103,
       "timer": {
-        "period": 1000000,
+        "period": 140000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 474525,
-      "dl-period": 1000000,
+      "dl-runtime": 63267,
+      "dl-period": 140000,
       "delay": 500000
     },
     "task03": {
-      "run": 62738,
+      "run": 130308,
       "timer": {
-        "period": 300000,
+        "period": 470000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 66040,
-      "dl-period": 300000,
+      "dl-runtime": 137167,
+      "dl-period": 470000,
       "delay": 500000
     },
     "task04": {
-      "run": 225520,
+      "run": 36630,
       "timer": {
-        "period": 800000,
+        "period": 170000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 237390,
-      "dl-period": 800000,
+      "dl-runtime": 38630,
+      "dl-period": 170000,
       "delay": 500000
     },
     "task05": {
-      "run": 3610,
+      "run": 10085,
       "timer": {
-        "period": 16050000,
+        "period": 190000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 5610,
-      "dl-period": 16050000,
+      "dl-runtime": 12085,
+      "dl-period": 190000,
       "delay": 500000
     },
     "task06": {
-      "run": 50079,
+      "run": 69367,
       "timer": {
-        "period": 500000,
+        "period": 440000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 52715,
-      "dl-period": 500000,
+      "dl-runtime": 73018,
+      "dl-period": 440000,
       "delay": 500000
     },
     "task07": {
-      "run": 83913,
+      "run": 37575,
       "timer": {
-        "period": 700000,
+        "period": 120000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 88330,
-      "dl-period": 700000,
+      "dl-runtime": 39575,
+      "dl-period": 120000,
       "delay": 500000
     },
     "task08": {
-      "run": 11370,
+      "run": 51293,
       "timer": {
-        "period": 100000,
+        "period": 1200000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 13370,
-      "dl-period": 100000,
+      "dl-runtime": 53993,
+      "dl-period": 1200000,
       "delay": 500000
     },
     "task09": {
-      "run": 135208,
+      "run": 5236,
       "timer": {
-        "period": 600000,
+        "period": 140000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 142325,
-      "dl-period": 600000,
+      "dl-runtime": 7236,
+      "dl-period": 140000,
       "delay": 500000
     },
     "task10": {
-      "run": 6410,
+      "run": 89024,
       "timer": {
-        "period": 600000,
+        "period": 390000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 8410,
-      "dl-period": 600000,
+      "dl-runtime": 93710,
+      "dl-period": 390000,
       "delay": 500000
     },
     "task11": {
-      "run": 5845,
+      "run": 13077,
       "timer": {
-        "period": 300000,
+        "period": 380000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 7845,
-      "dl-period": 300000,
+      "dl-runtime": 15077,
+      "dl-period": 380000,
       "delay": 500000
     }
   },

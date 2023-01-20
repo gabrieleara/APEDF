@@ -171,8 +171,8 @@ function generate_taskset() {
         -s 1 \
         -n "$ntasks" \
         -u "$util" \
-        -p 20000 \
-        -q 400000 \
+        -p 100000 \
+        -q 1200000 \
         -g 10000 \
         --round-C \
         -f "%(C)d %(T)d"
@@ -338,6 +338,8 @@ function check_utilization() {
     text_file=
     json_file=
 
+    tested_seeds=()
+
     # for each number of tasks
     for ((k = 0; k < $GT_NUM_TASKS_NUM; k++)); do
         num_tasks="${GT_NUM_TASKS_LIST[$k]}"
@@ -350,35 +352,46 @@ function check_utilization() {
                 continue
             fi
 
+            tested_seeds=()
+
             # for each repetition
             for ((i = 0; i < "$GT_NUM_TASKSETS"; i++)); do
                 seed="${GT_SEEDS_LIST[$i]}"
 
-                printf 'Generating taskset with %02d tasks, util %.4f, index %02d, (seed %d)' \
-                    "$num_tasks" "$util" "$i" "$seed"
+                doitagain=1
 
-                # Printing to variable tset_file
-                printf -v tset_name \
-                    'ts_n%02d_i%02d_u%.4f' "$num_tasks" "$i" "$util"
+                while [ "$doitagain" = 1 ]; do
+                    printf 'Generating taskset with %02d tasks, util %.4f, index %02d, (seed %d)' \
+                        "$num_tasks" "$util" "$i" "$seed"
 
-                tset_file="${GT_OUT_DIR}/${tset_name}"
-                text_file="${tset_file}.txt"
-                json_file="${tset_file}.json"
+                    tested_seeds+=("${seed}")
 
-                generate_taskset "$seed" "$num_tasks" "$util" \
-                    >"$text_file" # 2>/dev/null
+                    # Printing to variable tset_file
+                    printf -v tset_name \
+                        'ts_n%02d_i%02d_u%.4f' "$num_tasks" "$i" "$util"
 
-                printf " Runtimes check:"
-                num_tasks_below_threshold=$(check_runtimes "$text_file")
-                if [ $num_tasks_below_threshold -gt 0 ]; then
-                    printf " had to fix!"
-                    tmpfile=$(mktemp)
-                    fix_runtimes "$text_file" >"$tmpfile"
-                    cp "$tmpfile" "$text_file"
-                    rm "$tmpfile"
-                else
-                    printf " OK!"
-                fi
+                    tset_file="${GT_OUT_DIR}/${tset_name}"
+                    text_file="${tset_file}.txt"
+                    json_file="${tset_file}.json"
+
+                    generate_taskset "$seed" "$num_tasks" "$util" \
+                        >"$text_file" # 2>/dev/null
+
+                    printf " Runtimes check:"
+                    num_tasks_below_threshold=$(check_runtimes "$text_file")
+                    if [ $num_tasks_below_threshold -gt 0 ]; then
+                        printf " had to fix!"
+                        seed=$((seed+1))
+                        while [[ " ${GT_SEEDS_LIST[*]} ${tested_seeds[*]} " =~ " ${seed} " ]]; do
+                            seed=$((seed+1))
+                        done
+                    else
+                        printf " OK!"
+                        doitagain=0
+                    fi
+
+                    printf '\n'
+                done
 
                 # # NOTE: this could be necessary if the tasks exceed the maximum
                 # check_utilization "$text_file" "$util"
@@ -393,8 +406,6 @@ function check_utilization() {
                     <"$text_file" >"$json_file"
                 # Option -l is not used anymore
                 # -l "$tset_name" \
-
-                printf '\n'
 
             done
         done

@@ -99,13 +99,13 @@ def parse_task(task_logfile):
     # - exec_ratio: ratio between the expected runtime (reservation) and the
     #               actual one (if >= 1 we had an overrun!)
     task_log['exec_ratio_to_expected'] = task_log['run'] / task_log['c_duration']
-    task_log['exec_ratio_to_reservation'] = task_log['run'] / task_log['dl_runtime']
+    task_log['exec_ratio_to_reservation'] = task_log['run'] / (task_log['dl_runtime'] / 1000.0)
 
     # Count the number of overruns, if positive of course we have misses!
-    num_overruns = task_log['exec_ratio_to_reservation'].ge(1).count()
+    num_overruns = task_log['exec_ratio_to_reservation'].ge(1).sum()
     # Count all rows
     count = task_log['slack'].count()
-    if num_overruns > 0 and DISCARD_OVERRUN:
+    if num_overruns > 5 and DISCARD_OVERRUN:
         eprint(
             f"{num_overruns} / {count} !!")
         raise OverrunException

@@ -1,69 +1,69 @@
 {
   "tasks": {
     "task00": {
-      "run": 112799,
+      "run": 341366,
       "timer": {
-        "period": 380000,
+        "period": 1150000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 118736,
-      "dl-period": 380000,
+      "dl-runtime": 359333,
+      "dl-period": 1150000,
       "delay": 500000
     },
     "task01": {
-      "run": 3123,
+      "run": 23614,
       "timer": {
-        "period": 20000,
+        "period": 100000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 5123,
-      "dl-period": 20000,
+      "dl-runtime": 25614,
+      "dl-period": 100000,
       "delay": 500000
     },
     "task02": {
-      "run": 9113,
+      "run": 32873,
       "timer": {
-        "period": 290000,
+        "period": 910000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 11113,
-      "dl-period": 290000,
+      "dl-runtime": 34873,
+      "dl-period": 910000,
       "delay": 500000
     },
     "task03": {
-      "run": 9746,
+      "run": 40169,
       "timer": {
-        "period": 150000,
+        "period": 540000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 11746,
-      "dl-period": 150000,
+      "dl-runtime": 42284,
+      "dl-period": 540000,
       "delay": 500000
     },
     "task04": {
-      "run": 7134,
+      "run": 34535,
       "timer": {
-        "period": 80000,
+        "period": 320000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 9134,
-      "dl-period": 80000,
+      "dl-runtime": 36535,
+      "dl-period": 320000,
       "delay": 500000
     },
     "task05": {
-      "run": 2012,
+      "run": 22072,
       "timer": {
-        "period": 20000,
+        "period": 120000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 4012,
-      "dl-period": 20000,
+      "dl-runtime": 24072,
+      "dl-period": 120000,
       "delay": 500000
     }
   },

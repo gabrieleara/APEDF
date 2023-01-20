@@ -1,74 +1,74 @@
 {
   "tasks": {
     "task00": {
-      "run": 65966,
+      "run": 256535,
       "timer": {
-        "period": 90000,
+        "period": 350000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 69438,
-      "dl-period": 90000,
+      "dl-runtime": 270037,
+      "dl-period": 350000,
       "delay": 500000
     },
     "task01": {
-      "run": 15129,
+      "run": 56525,
       "timer": {
-        "period": 190000,
+        "period": 660000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 17129,
-      "dl-period": 190000,
+      "dl-runtime": 59500,
+      "dl-period": 660000,
       "delay": 500000
     },
     "task02": {
-      "run": 17320,
+      "run": 63219,
       "timer": {
-        "period": 180000,
+        "period": 620000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 19320,
-      "dl-period": 180000,
+      "dl-runtime": 66547,
+      "dl-period": 620000,
       "delay": 500000
     },
     "task03": {
-      "run": 36496,
+      "run": 158475,
       "timer": {
-        "period": 60000,
+        "period": 260000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 38496,
-      "dl-period": 60000,
+      "dl-runtime": 166816,
+      "dl-period": 260000,
       "delay": 500000
     },
     "task04": {
-      "run": 12189,
+      "run": 76382,
       "timer": {
-        "period": 30000,
+        "period": 170000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 14189,
-      "dl-period": 30000,
+      "dl-runtime": 80403,
+      "dl-period": 170000,
       "delay": 500000
     },
     "task05": {
-      "run": 55384,
+      "run": 193844,
       "timer": {
-        "period": 140000,
+        "period": 490000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 58299,
-      "dl-period": 140000,
+      "dl-runtime": 204047,
+      "dl-period": 490000,
       "delay": 500000
     }
   },
   "global": {
-    "duration": 23,
+    "duration": 30,
     "default_policy": "SCHED_DEADLINE",
     "calibration": 92,
     "pi_enabled": false,
