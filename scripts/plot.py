@@ -22,9 +22,8 @@ def dir_path(string):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('in_files', type=argparse.FileType('r'), nargs='+')
+    parser.add_argument('in_file', type=argparse.FileType('r'))
 
-    # parser.add_argument("in_dir", type=dir_path)
     parser.add_argument('-o', "--out-file", default='out.png')
     parser.add_argument('-l', "--log", action='store_true')
     return parser.parse_args()
@@ -34,37 +33,29 @@ def parse_args():
 def main():
     args = parse_args()
 
-    dfs = {}
+    data = pd.read_csv(args.in_file, sep='\t', index_col=None)
+    data.sort_values(by=['num_tasks', 'util', 'tset_idx'], inplace=True)
 
-    for f in args.in_files:
-        filename = f.name
-        label = os.path.splitext(os.path.basename(filename))[0]
-        dfs[label] = pd.read_csv(f, sep='\t', index_col=None, header=0)
+    figure, axis = plt.subplots()
 
-    for label, df in dfs.items():
-        df.sort_values('util', ignore_index=True, inplace=True)
+    for number, group in data.groupby('num_tasks'):
+        axis.scatter(group['util'], group['miss_ratio'], label=f"{number:02d} tasks")
 
-    fig, ax = plt.subplots()
+    # # data.groupby('num_tasks').plot(x='util', y='miss_ratio', kind='scatter', legend=True, ax=axis)
+    # data.plot(x='util', y='miss_ratio', kind='scatter', legend=True, ax=axis) #, index=['num_tasks'])
 
-    for label in dfs:
-        ax.scatter(
-            dfs[label]['util'],
-            dfs[label]['miss_ratio'],
-            label=label,
-        )
-
-    ax.set(
+    axis.set(
         xlabel='Taskset Utilization',
         ylabel='Deadline Miss Ratio',
         title='',
     )
-    ax.grid()
-    ax.legend()
+    axis.grid()
+    axis.legend()
 
     if args.log:
         plt.yscale('log')
 
-    fig.savefig(args.out_file)
+    figure.savefig(args.out_file)
     plt.show()
 
     return 0
@@ -72,4 +63,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main())
