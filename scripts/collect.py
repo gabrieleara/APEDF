@@ -2,9 +2,10 @@
 
 import argparse
 import os
-import pandas as pd
 import parse
 import sys
+
+import pandas as pd
 
 
 def eprint(*args, **kwargs):
@@ -42,15 +43,19 @@ DISCARD_OVERRUN = False
 PRINT_MISSES = False
 
 
-class TooShortException(Exception):
+class TooShort(Exception):
     pass
 
 
-class AllTasksSkippedException(Exception):
+class AllTasksSkipped(Exception):
     pass
 
 
-class OverrunException(Exception):
+class Overrun(Exception):
+    pass
+
+
+class ThermalThrottling(Exception):
     pass
 
 
@@ -58,6 +63,12 @@ def parse_task(task_logfile):
     # Logfiles have multiple spaces as a single separator
     task_log = pd.read_csv(task_logfile, delimiter=r"\s+")
     task_log.rename(columns={'#idx': 'idx'}, inplace=True)
+
+    # Normalizing some data (see below)
+    task_log['dl_period'] //= 1000
+    task_log['dl_runtime'] //= 1000
+    task_log['dl_deadline'] //= 1000
+    task_log['freq'] /= 1000000.0
 
     # Fields description:
     # - idx:        STATIC          task index in taskset
@@ -72,7 +83,7 @@ def parse_task(task_logfile):
     # - c_period    STATIC  [us]    expected activation period
     # - wu_lat      DYNAMIC [us]    sum of wakeup latencies after timer events
     # - cpu         DYNAMIC         CPU id where it executed
-    # - freq        DYNAMIC         CPU frequency
+    # - freq        DYNAMIC [GHz]   CPU frequency
     # - dl_runtime  STATIC  [us]    SCHED_DEADLINE parameter
     # - dl_period   STATIC  [us]    SCHED_DEADLINE parameter
     # - dl_deadline STATIC  [us]    SCHED_DEADLINE parameter
@@ -86,6 +97,10 @@ def parse_task(task_logfile):
         'dl_runtime',
         'dl_period',
         'dl_deadline',
+        # Assuming that there are zero migrations:
+        'cpu',
+        # Assuming that there is no thermal throttling
+        'freq',
     ]
     task_info = {}
     for field in STATIC_FIELDS:
@@ -93,13 +108,15 @@ def parse_task(task_logfile):
 
     # For now we skip all tasks with not enough runtime
     if task_info['c_duration'] < 5000 and DISCARD_SMALL:
-        raise TooShortException
+        raise TooShort
 
     # Extra fields:
     # - exec_ratio: ratio between the expected runtime (reservation) and the
     #               actual one (if >= 1 we had an overrun!)
-    task_log['exec_ratio_to_expected'] = task_log['run'] / task_log['c_duration']
-    task_log['exec_ratio_to_reservation'] = task_log['run'] / (task_log['dl_runtime'] / 1000.0)
+    task_log['exec_ratio_to_expected'] = task_log['run'] / \
+        task_log['c_duration']
+    task_log['exec_ratio_to_reservation'] = task_log['run'] / \
+        (task_log['dl_runtime'])
 
     # Count the number of overruns, if positive of course we have misses!
     num_overruns = task_log['exec_ratio_to_reservation'].ge(1).sum()
@@ -108,7 +125,10 @@ def parse_task(task_logfile):
     if num_overruns > 5 and DISCARD_OVERRUN:
         eprint(
             f"{num_overruns} / {count} !!")
-        raise OverrunException
+        raise Overrun
+
+    if len(task_log['freq'].unique()) != 1:
+        raise ThermalThrottling
 
     # If we get here, everything should be alright (exception thrown by other
     # tasks must be taken into account in the taskset parser function, so that
@@ -178,7 +198,7 @@ def parse_taskset(tset_dir):
         # counted, but will not disqualify the taskset entirely
         try:
             tstats = parse_task(os.path.join(tset_dir, tdir))
-        except (TooShortException, OverrunException) as error:
+        except (TooShort, Overrun) as error:
             eprint(
                 f"WARN: {type(error).__name__}, skipping {os.path.join(tset_dir, tdir)} ...")
             continue
@@ -201,7 +221,7 @@ def parse_taskset(tset_dir):
     try:
         tset_stats['miss_ratio'] = tset_stats['misses'] / tset_stats['count']
     except ZeroDivisionError:
-        raise AllTasksSkippedException
+        raise AllTasksSkipped
 
     # 1. The stats of the whole taskset
     # 2. List of the stats of each task
@@ -234,7 +254,7 @@ def main():
         try:
             tset_stats, tasks_stats = parse_taskset(
                 os.path.join(args.in_dir, tset_dir))
-        except (TooShortException, OverrunException, AllTasksSkippedException) as error:
+        except (TooShort, Overrun, AllTasksSkipped, ThermalThrottling) as error:
             eprint(
                 f"WARN: {type(error).__name__}, skipping {tset_dir} ...")
             continue
