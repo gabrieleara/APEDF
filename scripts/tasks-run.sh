@@ -316,7 +316,7 @@ function main() {
 
 		if [ $i -ge $j ]; then
 			telegram_notify \
-				"Completion rate on $(hostname_waddress): $i / $ntsets" || true
+				"Completion rate on $(hostname_waddress): [$i/$ntsets]" || true
 			j=$((i + 10))
 		fi
 

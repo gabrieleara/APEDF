@@ -102,7 +102,9 @@ def parse_task(task_logfile):
         # Assuming that there is no thermal throttling
         'freq',
     ]
-    task_info = {}
+    task_info = {
+        'filename': task_logfile,
+    }
     for field in STATIC_FIELDS:
         task_info[field] = task_log[field][0]
 
