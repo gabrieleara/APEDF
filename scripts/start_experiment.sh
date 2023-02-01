@@ -24,6 +24,18 @@ function main() {
 		fi
 	done
 
+	# Check that there are no screens named 'experiment' around
+	if screen -ls | cut -d. -f2 | tail -n +2 | cut -d$'\t' -f1 | grep -q experiment; then
+		echo "An experiment is already running (screen open)!" >&2
+		return 1
+	fi
+
+	# Check that the experiment script is running
+	if pgrep tasks-run.sh >/dev/null; then
+		echo "An experiment is already running!" >&2
+		return 1
+	fi
+
 	# Start experiment in a detached screen named "experiment"
 	screen -L -Logfile last_experiment.log \
 		-S experiment \
@@ -31,7 +43,9 @@ function main() {
 		./scripts/tasks-run.sh \
 		--skipbuild \
 		--printlist \
-		--cooldown 90 \
+		--timeout 90 \
+		--outdir out-90 \
+		--cooldown 30 \
 		--maxfreq=1.4GHz \
 		--tasksdir=./tasksets/
 

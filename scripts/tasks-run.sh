@@ -15,6 +15,9 @@ Usage: ${SCRIPT_NAME} <options>
     --skipbuild         - skips the build of the apps (e.g., rtapp)
     --printlist         - print the full ordered list of tasksets
 
+    --timeout=TIMEOUT   - the timeout for rt-app, values greater than zero
+                          indicate how much rt-app should run for.
+                          (default = -1, aka: use value from each JSON file)
     --tasksdir=TASKSDIR - the directory where to look for tasksets; it will
                           look only for tasksets in that directory, meaning
                           no subdirectories!
@@ -51,6 +54,7 @@ function parse_args() {
 	SKIPBUILD=n
 	PRINTLIST=n
 	OVERWRITE=n
+	TIMEOUT=-1
 	MAX_FREQ="$MAX_FREQ_DEFAULT"
 	while [ $# -gt 0 ]; do
 		case $1 in
@@ -78,6 +82,18 @@ function parse_args() {
 				shift
 			else
 				echo "${SCRIPT_NAME}: Error - '--loglevel' expects an argument"
+				usage
+				return 1
+			fi
+			;;
+		--timeout*)
+			if echo $1 | grep '=' >/dev/null; then
+				TIMEOUT=$(echo $1 | sed 's/^--timeout=//')
+			elif [ -n "$2" ]; then
+				TIMEOUT=$2
+				shift
+			else
+				echo "${SCRIPT_NAME}: Error - '--timeout' expects an argument"
 				usage
 				return 1
 			fi
@@ -180,9 +196,6 @@ function get_all_tsets() {
 }
 
 function setup() {
-	source "$SCRIPT_PATH/util/telegram-tokens.sh" 2>/dev/null || true
-	source "$SCRIPT_PATH/util/telegram.sh"
-
 	POWER_FILE=$(mktemp)
 	POWER_PID=
 
@@ -197,7 +210,6 @@ function cleanup() {
 
 	kill "$POWER_PID" 2>/dev/null || true
 	rm -f "$POWER_FILE" 2>/dev/null || true
-	telegram_notify "Experiment on $(hostname_waddress) terminated!"
 
 	if [ "$1" = EXIT ]; then
 		return 0
@@ -256,9 +268,6 @@ function main() {
 	echo " + advertised frequency configuration: "
 	cpufreq-info -o --human
 
-	i=0
-	j=10
-
 	# Disable deadline admission control or change its bound
 	if [ -n "$RTLIMIT" ]; then
 		echo " + Setting kernel.sched_rt_runtime_us='$RTLIMIT'"
@@ -269,6 +278,7 @@ function main() {
 	echo ' + Starting tests...'
 	echo ''
 
+	i=0
 	for ts in "${tsets[@]}"; do
 		i=$((i + 1))
 		printf ' + Running test [%0'$ndigits'd/%0'$ndigits'd] defined in %s ...' "$i" "$ntsets" "$ts"
@@ -288,7 +298,7 @@ function main() {
 		# POWER_PID="$!"
 		# sleep 2s
 
-		nice -n 20 "$RTAPP" -l "$LOGLEVEL" "$ts"
+		nice -n 20 "$RTAPP" -t "$TIMEOUT" -l "$LOGLEVEL" "$ts"
 		sleep 2s
 
 		# kill "$POWER_PID"
@@ -313,18 +323,9 @@ function main() {
 
 		# Wait for a while just in case board is heating up
 		sleep "$COOLDOWN"
-
-		if [ $i -ge $j ]; then
-			telegram_notify \
-				"Completion rate on $(hostname_waddress): [$i/$ntsets]" || true
-			j=$((i + 10))
-		fi
-
 	done
 
 	echo ' + All tests successful!!! '
-
-	telegram_notify "Experiment on $(hostname_waddress) was a success!"
 	# rm "${POWER_FILE}"
 }
 
