@@ -136,13 +136,11 @@ def decode_detect(bstr):
         return bstr
     return bstr.decode(detected['encoding'], 'ignore')
 
-def ssh_cmd(*args):
-    user = 'root'
-    host = 'zarquon'
+def sub_cmd(*args):
     cmd = ' '.join([*args])
 
     child_process = subprocess.Popen(
-        f"ssh {user}@{host} -o ConnectTimeout=1 {cmd}",
+        cmd,
         shell=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -161,14 +159,33 @@ def ssh_cmd(*args):
 
     return child_process.returncode, outs, errs
 
+def ssh_cmd(*args):
+    user = 'root'
+    host = 'zarquon'
+    retcode, outs, errs = sub_cmd("ssh", f"{user}@{host}", "-o", "ConnectTimeout=1", *args)
+    return retcode, outs, errs
 
 def parse_progress(outs):
     return outs.strip()
+
+def ping_check():
+    retcode, outs, errs = sub_cmd("ping -c1 10.30.3.51")
+    if retcode != 0:
+        msg = f'Could not ping! {errs}'.strip()
+        eprint.error("FAILURE!")
+        eprint.error(msg)
+        notify_send(msg)
+        return False
+    else:
+        eprint.ok("Ping successful...", end=' ')
+    return True
 
 
 def experiment_check_running():
     eprint.plain(f'Check in progress...', end=' ')
     progress = None
+    if not ping_check():
+        return False, progress
     errcode, outs, errs = ssh_cmd("/root/APEDF/scripts/check_progress.sh")
     if errcode != 0:
         eprint.error("FAILURE!")
