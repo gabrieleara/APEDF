@@ -6,23 +6,21 @@ function main() {
 
 	cd "$APEDF_DIR"
 
-	# Turn off unwanted CPUs
-	for c in 0 1 2 3; do
-		echo 0 >/sys/devices/system/cpu/cpu$c/online
-	done
-
+	# # Turn off unwanted CPUs
+	# for c in 0 1 2 3; do
+	# 	echo 0 >/sys/devices/system/cpu/cpu$c/online
+	# done
 	# Just in case
-	cpufreq-set -c4 -f1.4GHz
-
-	# Check that everything is as it should be
-	sleep 2s
-	for c in 0 1 2 3; do
-		online=$(cat /sys/devices/system/cpu/cpu$c/online)
-		if [ "$online" = 1 ]; then
-			echo "COULD NOT TURN CPU $c OFFLINE!!" >&2
-			return 1
-		fi
-	done
+	# cpufreq-set -c4 -f1.4GHz
+	# # Check that everything is as it should be
+	# sleep 2s
+	# for c in 0 1 2 3; do
+	# 	online=$(cat /sys/devices/system/cpu/cpu$c/online)
+	# 	if [ "$online" = 1 ]; then
+	# 		echo "COULD NOT TURN CPU $c OFFLINE!!" >&2
+	# 		return 1
+	# 	fi
+	# done
 
 	# Check that there are no screens named 'experiment' around
 	if screen -ls | cut -d. -f2 | tail -n +2 | cut -d$'\t' -f1 | grep -q experiment; then
@@ -31,7 +29,7 @@ function main() {
 	fi
 
 	# Check that the experiment script is running
-	if pgrep tasks-run.sh >/dev/null; then
+	if pgrep multiple-experiment-wrapper.sh >/dev/null; then
 		echo "An experiment is already running!" >&2
 		return 1
 	fi
@@ -40,14 +38,7 @@ function main() {
 	screen -L -Logfile last_experiment.log \
 		-S experiment \
 		-d -m \
-		./scripts/tasks-run.sh \
-		--skipbuild \
-		--printlist \
-		--timeout 90 \
-		--outdir out-90 \
-		--cooldown 30 \
-		--maxfreq=1.4GHz \
-		--tasksdir=./tasksets/
+		./scripts/multiple-experiment-wrapper.sh
 
 	return 0
 }

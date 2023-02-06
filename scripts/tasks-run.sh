@@ -31,11 +31,18 @@ Usage: ${SCRIPT_NAME} <options>
                           (default: no value will be written)
     --cooldown=SECONDS  - time to sleep for in-between runs for cooldown
                           (default: 90s)
+    --turnoff=CORELIST  - a SPACE SEPARATED list of cores (single string) to
+                          turn off (default: empty, no cores will be turned off)
+    --corelist=CORELIST - a TASKSET-LIKE list of cores to use; affects:
+                          --maxfreq (only the max freq of these cores will be changed)
+                          --governor (only the freq governor of these cores will be changed)
+                          (default: all the cores on the platform, $CORELIST_DEFAULT)
     --maxfreq=MAXFREQ   - maximum frequency to set (using 'performance'
                           governor), value expressed either in Hz or by using
                           unit suffixes (e.g., 1.4GHz); by default, the maximum
                           frequency accepted by core 0 is used
                           (in this case, $MAX_FREQ_DEFAULT kHZ)
+    --governor=GOVERNOR - the frequency governor to use (default: no governor changed)
 
     -h --help           - show this help message and exit
     --debug             - run this program in debug mode
@@ -43,6 +50,7 @@ Usage: ${SCRIPT_NAME} <options>
 }
 
 MAX_FREQ_DEFAULT="$(cpufreq-info --hwlimits | cut -d' ' -f2)"
+CORELIST_DEFAULT=0-$(($(nproc) - 1))
 
 function parse_args() {
 	# Put options initializations here
@@ -55,6 +63,9 @@ function parse_args() {
 	PRINTLIST=n
 	OVERWRITE=n
 	TIMEOUT=-1
+	TURNOFF=""
+	CORELIST="$CORELIST_DEFAULT"
+	GOVERNOR=performance
 	MAX_FREQ="$MAX_FREQ_DEFAULT"
 	while [ $# -gt 0 ]; do
 		case $1 in
@@ -158,6 +169,42 @@ function parse_args() {
 				return 1
 			fi
 			;;
+		--governor*)
+			if echo $1 | grep '=' >/dev/null; then
+				GOVERNOR=$(echo $1 | sed 's/^--governor=//')
+			elif [ -n "$2" ]; then
+				GOVERNOR=$2
+				shift
+			else
+				echo "${SCRIPT_NAME}: Error - '--governor' expects an argument"
+				usage
+				return 1
+			fi
+			;;
+		--corelist*)
+			if echo $1 | grep '=' >/dev/null; then
+				CORELIST=$(echo $1 | sed 's/^--corelist=//')
+			elif [ -n "$2" ]; then
+				CORELIST=$2
+				shift
+			else
+				echo "${SCRIPT_NAME}: Error - '--corelist' expects an argument"
+				usage
+				return 1
+			fi
+			;;
+		--turnoff*)
+			if echo $1 | grep '=' >/dev/null; then
+				TURNOFF=$(echo $1 | sed 's/^--turnoff=//')
+			elif [ -n "$2" ]; then
+				TURNOFF=$2
+				shift
+			else
+				echo "${SCRIPT_NAME}: Error - '--turnoff' expects an argument"
+				usage
+				return 1
+			fi
+			;;
 		*)
 			echo "${SCRIPT_NAME}: Error - Unexpected argument ${1}" >&2
 			usage
@@ -240,7 +287,7 @@ function main() {
 	tsets=($(get_all_tsets "$TASKSDIR"))
 	ntsets="${#tsets[@]}"
 
-	if [ "$ntsets" -lt 1 ] ; then
+	if [ "$ntsets" -lt 1 ]; then
 		echo "$SCRIPT_NAME: Error - invalid --tasksdir directory '$TASKSDIR'" >&2
 		usage
 		return 1
@@ -258,13 +305,25 @@ function main() {
 	mkdir -p /tmp/rt-app-logs
 	mkdir -p "$OUTDIR"
 
-	# Assuming that all cpus are used
-	cpu_set=0-$(($(nproc) - 1))
+	# Turn off the given CPUs
+	if [ -n "$TURNOFF" ]; then
+		for c in $TURNOFF; do
+			echo " + turning off cpu $c"
+			echo 0 | tee /sys/devices/system/cpu/cpu$c/online >/dev/null
+		done
+	fi
 
-	# Adjust CPU frequency
-	echo " + setting maximum frequency and governor..."
-	cpufreq-set -c "$cpu_set" --governor performance
-	cpufreq-set -c "$cpu_set" --max "$MAX_FREQ"
+	# Make changes to CPUFREQ configuration
+	if [ -n "$MAX_FREQ" ]; then
+		echo " + setting maximum frequency..."
+		cpufreq-set -c "$CORELIST" --max "$MAX_FREQ"
+	fi
+
+	if [ -n "$GOVERNOR" ]; then
+		echo " + setting frequency governor..."
+		cpufreq-set -c "$CORELIST" --governor "$GOVERNOR"
+	fi
+
 	echo " + advertised frequency configuration: "
 	cpufreq-info -o --human
 
@@ -293,6 +352,9 @@ function main() {
 			continue
 		fi
 
+		# Clean stuff from previous execution
+		rm -f "/tmp/rt-app-logs/*"
+
 		# Power sampler
 		# nice -n -20 "$SAMPLER_APP" >"$POWER_FILE" 2>/dev/null &
 		# POWER_PID="$!"
@@ -320,6 +382,9 @@ function main() {
 		# Memory caches tend to fill up rather quickly, let's avoid that
 		sync
 		echo 1 >/proc/sys/vm/drop_caches
+
+		# Clean stuff from previous execution
+		rm -f "/tmp/rt-app-logs/*"
 
 		# Wait for a while just in case board is heating up
 		sleep "$COOLDOWN"

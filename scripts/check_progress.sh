@@ -14,7 +14,7 @@ function main() {
 	TMP_FILE=$(mktemp)
 
 	# Check that the experiment script is running
-	if pgrep tasks-run.sh >/dev/null; then
+	if pgrep multiple-experiment-wrapper.sh >/dev/null; then
 		running=1
 	else
 		running=0
@@ -27,7 +27,7 @@ function main() {
 	line=""
 	while read line; do
 		line=$(echo "$line" | trim)
-		if [ -n "$line" ] && ! (echo "$line" | grep -q 'command not found'); then
+		if [ -n "$line" ] && ! (echo "$line" | grep -q 'command not found') && !( echo "$line" | grep -q 'All tests successful'); then
 			break
 		fi
 	done <"$TMP_FILE"
@@ -37,14 +37,14 @@ function main() {
 	fi
 
 	# If this line is shown, it's over
-	if echo "$line" | grep -q "All tests successful"; then
+	if echo "$line" | grep -q "END OF EXPERIMENTS MARKER"; then
 		echo 'END'
 		return 0
 	fi
 
 	# If no process was found before, raise error
 	if [ $running = 0 ]; then
-		echo "No tasks-run.sh process running" >&2
+		echo "No multiple-experiment-wrapper.sh process running" >&2
 		return 1
 	fi
 
