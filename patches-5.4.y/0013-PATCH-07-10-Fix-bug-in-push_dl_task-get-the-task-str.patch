@@ -1,4 +1,4 @@
-From 73eaae0784be104de672896b811f9d6137913cbb Mon Sep 17 00:00:00 2001
+From fa3356c1b52c7d8c082aae84964ece2e1acfefbb Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:17:24 +0000
 Subject: [PATCH 07/10] Fix bug in push_dl_task: get the task structure when
@@ -9,10 +9,10 @@ Subject: [PATCH 07/10] Fix bug in push_dl_task: get the task structure when
  1 file changed, 4 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index f416fefe42e3..6374cdb58ac0 100644
+index 6615747378ea..6846b50b3312 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2149,18 +2149,16 @@ static int push_dl_task(struct rq *rq)
+@@ -2158,18 +2158,16 @@ static int push_dl_task(struct rq *rq)
  	if (!next_task)
  		return 0;
  

@@ -1,0 +1,83 @@
+From a2e866fb56a467a33e56a6f1671d5b4ebfbcdc0c Mon Sep 17 00:00:00 2001
+From: Gabriele Ara <gabriele.ara@santannapisa.it>
+Date: Mon, 13 Feb 2023 10:04:13 +0000
+Subject: Fixing push_dl_task and adding fallback to G-EDF
+
+---
+ kernel/sched/deadline.c | 57 +++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 57 insertions(+)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index b1ed2ccd836b..808342c7637d 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -2268,9 +2268,66 @@ static int push_dl_task(struct rq *rq)
+ 			 */
+ 			next_task->dl.dl_new = 0;
+ 			put_task_struct(next_task);
++
++			if (later_rq) {
++				/* Free up the other rq */
++				double_unlock_balance(rq, later_rq);
++			}
++
++			continue;
++		}
++
++		/*
++		 * Task must still be moved and it can be
++		 * moved to later_rq, so we do it now.
++		 */
++		deactivate_task(rq, next_task, 0);
++		set_task_cpu(next_task, later_rq->cpu);
++
++		/*
++		 * Update the later_rq clock here, because the clock is used
++		 * by the cpufreq_update_util() inside __add_running_bw().
++		 */
++		update_rq_clock(later_rq);
++		activate_task(later_rq, next_task, ENQUEUE_NOCLOCK);
++		resched_curr(later_rq);
++
++		double_unlock_balance(rq, later_rq);
++		next_task->dl.dl_new = 0;
++		put_task_struct(next_task);
++		return 1;
++	}
++
++	/* We could not push any of the tasks in the queue using FF, fall back
++	 * to global EDF if rq is over committed and there is at least one task
++	 * that can be pushed.
++	 */
++	for (trycount = 0,
++	     node = pushable_dl_first(rq);
++	     node && ! (rq->dl.this_bw <= rq->dl.max_bw) && trycount < DL_MAX_TRIES;
++	     ++trycount,
++	     node = pushable_dl_first(rq)) {
++
++		next_task = pushable_dl_task(rq, node);
++		get_task_struct(next_task);
++
++		/* Use the global-EDF version, will lock later_rq if not NULL */
++		later_rq = find_lock_later_rq(next_task, rq);
++
++		/* Global EDF could not find a suitable rq, try again */
++		if (later_rq == NULL) {
++			put_task_struct(next_task);
+ 			continue;
+ 		}
+ 
++		/* Core is not over committed anymore */
++		if (rq->dl.this_bw <= rq->dl.max_bw) {
++			put_task_struct(next_task);
++			/* Free up the other rq */
++			double_unlock_balance(rq, later_rq);
++			return 0;
++		}
++
+ 		/*
+ 		 * Task must still be moved and it can be
+ 		 * moved to later_rq, so we do it now.
+-- 
+2.25.1
+

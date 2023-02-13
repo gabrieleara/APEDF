@@ -1,4 +1,4 @@
-From e7ba20aad480a1dfb2591edc1e45cc30f591e8fc Mon Sep 17 00:00:00 2001
+From a3aad36cdef638b96be8068ea8c1f9a25c5e0abf Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:15:28 +0000
 Subject: [PATCH 05/10] Remove probably unneeded code
@@ -10,10 +10,10 @@ then doing gEDF is useless (it will be done later, by push)
  1 file changed, 2 insertions(+)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 2d12579307b4..1cb68975f2ff 100644
+index 63dc71e622b5..9b3ba4e9e51a 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -1654,6 +1654,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
+@@ -1663,6 +1663,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
  	target = find_later_rq_ff(p);
  	if (target >= 0) {
  		cpu = target;
@@ -21,7 +21,7 @@ index 2d12579307b4..1cb68975f2ff 100644
  	} else if (rq->dl.this_bw > rq->dl.max_bw) {
  		/* FF did not work: Try gEDF */
  		target = find_later_rq(p);
-@@ -1662,6 +1663,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
+@@ -1671,6 +1672,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
  			(cpu_rq(target)->dl.dl_nr_running == 0))) {
  				cpu = target;
  		}

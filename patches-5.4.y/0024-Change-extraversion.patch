@@ -1,0 +1,25 @@
+From a563b4464bf637ac4be302a4f834d4adf91c21ef Mon Sep 17 00:00:00 2001
+From: Gabriele Ara <gabriele.ara@santannapisa.it>
+Date: Wed, 25 Jan 2023 13:24:22 +0100
+Subject: Change extraversion
+
+---
+ Makefile | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/Makefile b/Makefile
+index e113012186f8..9c081b5f937e 100644
+--- a/Makefile
++++ b/Makefile
+@@ -2,7 +2,7 @@
+ VERSION = 5
+ PATCHLEVEL = 4
+ SUBLEVEL = 228
+-EXTRAVERSION =-apedf1
++EXTRAVERSION =-apedf2
+ NAME = Kleptomaniac Octopus
+ 
+ # *DOCUMENTATION*
+-- 
+2.25.1
+

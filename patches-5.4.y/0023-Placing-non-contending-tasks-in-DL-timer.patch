@@ -1,4 +1,4 @@
-From 0a777d5d700b31a4e86cb9f64adb2353a8b34bd8 Mon Sep 17 00:00:00 2001
+From c71e2d1605b35674711eaba9483dbae5be296fae Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Fri, 2 Dec 2022 13:58:32 +0000
 Subject: Placing non contending tasks in DL timer
@@ -8,7 +8,7 @@ Subject: Placing non contending tasks in DL timer
  1 file changed, 6 insertions(+), 10 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 7cdf302184f3..c5b216c6944d 100644
+index ace1466c4e75..d993dbb9ac88 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -982,7 +982,7 @@ static int start_dl_timer(struct task_struct *p)
@@ -29,7 +29,7 @@ index 7cdf302184f3..c5b216c6944d 100644
  	if (task_cpu(p) != cpu) {
  		set_task_cpu(p, cpu);
  	}
-@@ -1645,10 +1645,10 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
+@@ -1654,10 +1654,10 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
  
  	rq = cpu_rq(cpu);
  
@@ -44,7 +44,7 @@ index 7cdf302184f3..c5b216c6944d 100644
  
  	rcu_read_lock();
  
-@@ -2207,10 +2207,6 @@ static int push_dl_task(struct rq *rq)
+@@ -2216,10 +2216,6 @@ static int push_dl_task(struct rq *rq)
  	     node = pushable_dl_next(rq, node, &trycount)) {
  		next_task = pushable_dl_task(rq, node);
  

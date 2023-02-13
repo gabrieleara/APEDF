@@ -1,0 +1,28 @@
+From 41a9344aa5409ca38ca9eed51a367f3f8f5c7204 Mon Sep 17 00:00:00 2001
+From: Gabriele Ara <gabriele.ara@santannapisa.it>
+Date: Mon, 13 Feb 2023 11:25:34 +0000
+Subject: Fix: tasks are always contending when the dl_task_timer fires
+
+---
+ kernel/sched/deadline.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index 5427e95fecc9..cfbf4ae4f980 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1017,8 +1017,11 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
+ 		 */
+ 		p_state = p->state;
+ 		p->state = TASK_WAKING;
++		BUG_ON(p->dl.dl_non_contending);
++		p->dl.dl_non_contending = 1;
+ 		set_task_cpu(p, cpu);
+ 		p->state = p_state;
++		p->dl.dl_non_contending = 0;
+ 		migrating = true;
+ 	}
+ 
+-- 
+2.25.1
+

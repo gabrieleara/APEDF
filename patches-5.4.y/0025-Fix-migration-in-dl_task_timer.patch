@@ -1,0 +1,55 @@
+From cbf7263e38283817d087664aa1bcbedc9ccfb317 Mon Sep 17 00:00:00 2001
+From: Gabriele Ara <gabriele.ara@santannapisa.it>
+Date: Mon, 6 Feb 2023 13:47:00 +0000
+Subject: Fix migration in dl_task_timer
+
+---
+ kernel/sched/deadline.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index d993dbb9ac88..b1ed2ccd836b 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1005,11 +1005,21 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
+ 	struct rq_flags rf;
+ 	struct rq *rq;
+ 	int cpu;
++	bool migrating = false;
++	long p_state;
++	unsigned int p_on_rq;
+ 
+ 	raw_spin_lock_irqsave(&p->pi_lock, rf.flags);
+ 	cpu = select_task_rq_dl(p, p->wake_cpu, 0, 0);
+ 	if (task_cpu(p) != cpu) {
++		/* The WAKING state is necessary to correctly remove
++		 * the task bandwidth from the old runqueue
++		 */
++		p_state = p->state;
++		p->state = TASK_WAKING;
+ 		set_task_cpu(p, cpu);
++		p->state = p_state;
++		migrating = true;
+ 	}
+ 
+ 	rq = __task_rq_lock(p, &rf);
+@@ -1076,7 +1086,16 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
+ 	}
+ #endif
+ 
++	p_on_rq = p->on_rq;
++	if (migrating) {
++		/* The MIGRATING state is necessary to correctly
++		 * add the task bandwidth to the new runqueue
++		 */
++		p->on_rq = TASK_ON_RQ_MIGRATING;
++	}
+ 	enqueue_task_dl(rq, p, ENQUEUE_REPLENISH);
++	p->on_rq = p_on_rq;
++
+ 	if (dl_task(rq->curr))
+ 		check_preempt_curr_dl(rq, p, 0);
+ 	else
+-- 
+2.25.1
+

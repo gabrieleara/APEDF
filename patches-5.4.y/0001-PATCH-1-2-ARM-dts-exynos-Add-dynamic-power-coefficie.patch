@@ -1,4 +1,4 @@
-From b3f3e7ca8610be4fe7ef05e04e6a108c2d5337bb Mon Sep 17 00:00:00 2001
+From 3b675ce2b36de07f50e1ab13faed3f5f189992a3 Mon Sep 17 00:00:00 2001
 From: Lukasz Luba <lukasz.luba@arm.com>
 Date: Wed, 19 Feb 2020 09:58:27 +0000
 Subject: [PATCH 1/2] ARM: dts: exynos: Add dynamic-power-coefficient to
@@ -21,7 +21,7 @@ Signed-off-by: Lukasz Luba <lukasz.luba@arm.com>
  1 file changed, 8 insertions(+)
 
 diff --git a/arch/arm/boot/dts/exynos5422-cpus.dtsi b/arch/arm/boot/dts/exynos5422-cpus.dtsi
-index aea3893fe..9615e9035 100644
+index aea3893fed24..9615e90358bc 100644
 --- a/arch/arm/boot/dts/exynos5422-cpus.dtsi
 +++ b/arch/arm/boot/dts/exynos5422-cpus.dtsi
 @@ -31,6 +31,7 @@
@@ -89,5 +89,5 @@ index aea3893fe..9615e9035 100644
  	};
  };
 -- 
-2.38.1
+2.25.1
 

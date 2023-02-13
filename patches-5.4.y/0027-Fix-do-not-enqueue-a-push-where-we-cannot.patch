@@ -1,0 +1,29 @@
+From a8354ab2bdec1784be00c5ebd8258448bd6c49c0 Mon Sep 17 00:00:00 2001
+From: Gabriele Ara <gabriele.ara@santannapisa.it>
+Date: Mon, 13 Feb 2023 10:17:49 +0000
+Subject: Fix: do not enqueue a push where we cannot
+
+---
+ kernel/sched/deadline.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index 808342c7637d..5427e95fecc9 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1288,9 +1288,9 @@ static void update_curr_dl(struct rq *rq)
+ 		__dequeue_task_dl(rq, curr, 0);
+ 		if (unlikely(is_dl_boosted(dl_se) || !start_dl_timer(curr))) {
+ 			enqueue_task_dl(rq, curr, ENQUEUE_REPLENISH);
+-			if (rq->dl.this_bw > rq->dl.max_bw) {
+-				deadline_queue_push_tasks(rq);
+-			}
++			// if (rq->dl.this_bw > rq->dl.max_bw) {
++			// 	deadline_queue_push_tasks(rq);
++			// }
+ 		}
+ 
+ 		if (!is_leftmost(curr, &rq->dl))
+-- 
+2.25.1
+
