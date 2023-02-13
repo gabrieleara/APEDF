@@ -360,8 +360,18 @@ function main() {
 		# POWER_PID="$!"
 		# sleep 2s
 
+		# Turn tracing on
+		echo '1' > /sys/kernel/tracing/tracing_on
+
+		# Empty trace buffer
+		echo > /sys/kernel/tracing/trace
+
 		nice -n 20 "$RTAPP" -t "$TIMEOUT" -l "$LOGLEVEL" "$ts"
 		sleep 2s
+
+		# Copy content of trace buffer in the rt-app logs directory, to
+		# keep together with the logs
+		cat /sys/kernel/tracing/trace > /tmp/rt-app-logs/kernel.trace
 
 		# kill "$POWER_PID"
 		sync
