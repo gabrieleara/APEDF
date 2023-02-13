@@ -5,7 +5,7 @@ SCRIPT_PATH=$(realpath "$(dirname "${BASH_SOURCE[0]}")")
 PROJ_PATH=$(realpath "$SCRIPT_PATH/..")
 
 APPS_PATH="$PROJ_PATH/apps"
-RTAPP_DIR="$APPS_PATH/rt-app/"
+# RTAPP_DIR="$APPS_PATH/rt-app/"
 RTAPP="$APPS_PATH/rt-app/src/rt-app"
 
 function usage() {
@@ -41,7 +41,7 @@ Usage: ${SCRIPT_NAME} <options>
                           governor), value expressed either in Hz or by using
                           unit suffixes (e.g., 1.4GHz); by default, the maximum
                           frequency accepted by core 0 is used
-                          (in this case, $MAX_FREQ_DEFAULT kHZ)
+                          (in this case, $MAXFREQ_DEFAULT kHZ)
     --governor=GOVERNOR - the frequency governor to use (default: no governor changed)
 
     -h --help           - show this help message and exit
@@ -49,7 +49,7 @@ Usage: ${SCRIPT_NAME} <options>
 "
 }
 
-MAX_FREQ_DEFAULT="$(cpufreq-info --hwlimits | cut -d' ' -f2)"
+MAXFREQ_DEFAULT="$(cpufreq-info --hwlimits | cut -d' ' -f2)"
 CORELIST_DEFAULT=0-$(($(nproc) - 1))
 
 function parse_args() {
@@ -66,9 +66,9 @@ function parse_args() {
 	TURNOFF=""
 	CORELIST="$CORELIST_DEFAULT"
 	GOVERNOR=performance
-	MAX_FREQ="$MAX_FREQ_DEFAULT"
+	MAXFREQ="$MAXFREQ_DEFAULT"
 	while [ $# -gt 0 ]; do
-		case $1 in
+		case "$1" in
 		--debug)
 			set -x
 			;;
@@ -86,8 +86,8 @@ function parse_args() {
 			OVERWRITE=y
 			;;
 		--loglevel*)
-			if echo $1 | grep '=' >/dev/null; then
-				LOGLEVEL=$(echo $1 | sed 's/^--loglevel=//')
+			if echo "$1" | grep '=' >/dev/null; then
+				LOGLEVEL=$(echo "$1" | sed 's/^--loglevel=//')
 			elif [ -n "$2" ]; then
 				LOGLEVEL=$2
 				shift
@@ -98,8 +98,8 @@ function parse_args() {
 			fi
 			;;
 		--timeout*)
-			if echo $1 | grep '=' >/dev/null; then
-				TIMEOUT=$(echo $1 | sed 's/^--timeout=//')
+			if echo "$1" | grep '=' >/dev/null; then
+				TIMEOUT=$(echo "$1" | sed 's/^--timeout=//')
 			elif [ -n "$2" ]; then
 				TIMEOUT=$2
 				shift
@@ -110,8 +110,8 @@ function parse_args() {
 			fi
 			;;
 		--tasksdir*)
-			if echo $1 | grep '=' >/dev/null; then
-				TASKSDIR=$(echo $1 | sed 's/^--tasksdir=//')
+			if echo "$1" | grep '=' >/dev/null; then
+				TASKSDIR=$(echo "$1" | sed 's/^--tasksdir=//')
 			elif [ -n "$2" ]; then
 				TASKSDIR=$2
 				shift
@@ -122,8 +122,8 @@ function parse_args() {
 			fi
 			;;
 		--outdir*)
-			if echo $1 | grep '=' >/dev/null; then
-				OUTDIR=$(echo $1 | sed 's/^--outdir=//')
+			if echo "$1" | grep '=' >/dev/null; then
+				OUTDIR=$(echo "$1" | sed 's/^--outdir=//')
 			elif [ -n "$2" ]; then
 				OUTDIR=$2
 				shift
@@ -134,8 +134,8 @@ function parse_args() {
 			fi
 			;;
 		--rtlimit*)
-			if echo $1 | grep '=' >/dev/null; then
-				RTLIMIT=$(echo $1 | sed 's/^--rtlimit=//')
+			if echo "$1" | grep '=' >/dev/null; then
+				RTLIMIT=$(echo "$1" | sed 's/^--rtlimit=//')
 			elif [ -n "$2" ]; then
 				RTLIMIT=$2
 				shift
@@ -146,8 +146,8 @@ function parse_args() {
 			fi
 			;;
 		--cooldown*)
-			if echo $1 | grep '=' >/dev/null; then
-				COOLDOWN=$(echo $1 | sed 's/^--cooldown=//')
+			if echo "$1" | grep '=' >/dev/null; then
+				COOLDOWN=$(echo "$1" | sed 's/^--cooldown=//')
 			elif [ -n "$2" ]; then
 				COOLDOWN=$2
 				shift
@@ -158,8 +158,8 @@ function parse_args() {
 			fi
 			;;
 		--maxfreq*)
-			if echo $1 | grep '=' >/dev/null; then
-				MAXFREQ=$(echo $1 | sed 's/^--maxfreq=//')
+			if echo "$1" | grep '=' >/dev/null; then
+				MAXFREQ=$(echo "$1" | sed 's/^--maxfreq=//')
 			elif [ -n "$2" ]; then
 				MAXFREQ=$2
 				shift
@@ -170,8 +170,8 @@ function parse_args() {
 			fi
 			;;
 		--governor*)
-			if echo $1 | grep '=' >/dev/null; then
-				GOVERNOR=$(echo $1 | sed 's/^--governor=//')
+			if echo "$1" | grep '=' >/dev/null; then
+				GOVERNOR=$(echo "$1" | sed 's/^--governor=//')
 			elif [ -n "$2" ]; then
 				GOVERNOR=$2
 				shift
@@ -182,8 +182,8 @@ function parse_args() {
 			fi
 			;;
 		--corelist*)
-			if echo $1 | grep '=' >/dev/null; then
-				CORELIST=$(echo $1 | sed 's/^--corelist=//')
+			if echo "$1" | grep '=' >/dev/null; then
+				CORELIST=$(echo "$1" | sed 's/^--corelist=//')
 			elif [ -n "$2" ]; then
 				CORELIST=$2
 				shift
@@ -194,8 +194,8 @@ function parse_args() {
 			fi
 			;;
 		--turnoff*)
-			if echo $1 | grep '=' >/dev/null; then
-				TURNOFF=$(echo $1 | sed 's/^--turnoff=//')
+			if echo "$1" | grep '=' >/dev/null; then
+				TURNOFF=$(echo "$1" | sed 's/^--turnoff=//')
 			elif [ -n "$2" ]; then
 				TURNOFF=$2
 				shift
@@ -216,7 +216,7 @@ function parse_args() {
 }
 
 function check_loglevel() {
-	if [ $LOGLEVEL -ge 0 ] && [ $LOGLEVEL -le 10 ]; then
+	if [ "$LOGLEVEL" -ge 0 ] && [ "$LOGLEVEL" -le 10 ]; then
 		return 0
 	fi
 
@@ -275,8 +275,8 @@ function main() {
 		echo "This script must be run as root (or with sudo)" >&2
 		return 1
 	fi
-	RUID=$(id -ru)
-	RGID=$(id -rg)
+	ruid=$(id -ru)
+	rgid=$(id -rg)
 
 	if [ "$SKIPBUILD" != y ]; then
 		echo " + Re-building apps (just in case) ..."
@@ -309,14 +309,14 @@ function main() {
 	if [ -n "$TURNOFF" ]; then
 		for c in $TURNOFF; do
 			echo " + turning off cpu $c"
-			echo 0 | tee /sys/devices/system/cpu/cpu$c/online >/dev/null
+			echo 0 | tee "/sys/devices/system/cpu/cpu$c/online" >/dev/null
 		done
 	fi
 
 	# Make changes to CPUFREQ configuration
-	if [ -n "$MAX_FREQ" ]; then
+	if [ -n "$MAXFREQ" ]; then
 		echo " + setting maximum frequency..."
-		cpufreq-set -c "$CORELIST" --max "$MAX_FREQ"
+		cpufreq-set -c "$CORELIST" --max "$MAXFREQ"
 	fi
 
 	if [ -n "$GOVERNOR" ]; then
@@ -340,11 +340,11 @@ function main() {
 	i=0
 	for ts in "${tsets[@]}"; do
 		i=$((i + 1))
-		printf ' + Running test [%0'$ndigits'd/%0'$ndigits'd] defined in %s ...' "$i" "$ntsets" "$ts"
+		printf ' + Running test [%0'"$ndigits"'d/%0'"$ndigits"'d] defined in %s ...' "$i" "$ntsets" "$ts"
 
 		ts_base="$(basename "$ts")"
 		ts_base="${ts_base%.*}"
-		power_file_out="${ts_base}.power"
+		# power_file_out="${ts_base}.power"
 		rtapp_dir_out="${ts_base}.rt-app.d"
 
 		if [ -d "${OUTDIR}/${rtapp_dir_out}" ] && [ "$OVERWRITE" != y ]; then
@@ -369,7 +369,7 @@ function main() {
 
 		# Delete all previous results first, to overwrite with the new ones
 		if [ -d "${OUTDIR}/${rtapp_dir_out}" ]; then
-			rm -rf "${OUTDIR}/${rtapp_dir_out}"
+			rm -rf "${OUTDIR:?}/${rtapp_dir_out}"
 		fi
 
 		# cp "$POWER_FILE" "${OUTDIR}/${power_file_out}"
