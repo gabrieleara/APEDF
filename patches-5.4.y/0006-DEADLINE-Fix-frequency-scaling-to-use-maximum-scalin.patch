@@ -1,4 +1,4 @@
-From 1a27fc6de21588f8842e9e3daa0046c3aedbaa9e Mon Sep 17 00:00:00 2001
+From 98b360902dd4bc6a6007398db88c3031ca268280 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Thu, 12 Jan 2023 13:46:50 +0000
 Subject: DEADLINE: Fix frequency scaling to use maximum scaling allowed by

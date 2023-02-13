@@ -1,4 +1,4 @@
-From e48896fd69c34fb329ae20ec58821ba9f2d5f7e7 Mon Sep 17 00:00:00 2001
+From 401c9a4a49005114cbd14a682b81d0f7fb191391 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Mon, 13 Feb 2023 10:37:03 +0000
 Subject: [PATCH 3/3] SCHEDUTIL: avoid using more frequency than necessary
@@ -22,7 +22,7 @@ index cc6bcc1e96bc..b130973c47c5 100644
  #endif /* CONFIG_CPU_FREQ */
  
 diff --git a/kernel/sched/cpufreq_schedutil.c b/kernel/sched/cpufreq_schedutil.c
-index e002d91c353c..ff18a43528db 100644
+index 798e6ad6e0b7..00cf6823b376 100644
 --- a/kernel/sched/cpufreq_schedutil.c
 +++ b/kernel/sched/cpufreq_schedutil.c
 @@ -160,7 +160,7 @@ static void sugov_deferred_update(struct sugov_policy *sg_policy, u64 time,
