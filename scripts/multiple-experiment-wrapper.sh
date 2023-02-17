@@ -2,11 +2,12 @@
 
 function run_ntasks_with_governor() {
 	local ntasks="$1"
-	local governor="$2"
+	local outdir="$2"
+	local governor="$3"
 
 	echo "#================================================================#"
 	echo "#"
-	echo "#          STARTING BLOCK $1 $2"
+	echo "#          STARTING BLOCK $1 $2 $3"
 	echo "#"
 	echo "#================================================================#"
 
@@ -16,7 +17,7 @@ function run_ntasks_with_governor() {
 		--timeout 90 \
 		--cooldown 30 \
 		--tasksdir "./tasksets/$ntasks" \
-		--outdir "out/$governor" \
+		--outdir "$outdir/$governor" \
 		--governor "$governor" \
 		--corelist 4-7 \
 		--turnoff "0 1 2 3" \
@@ -37,11 +38,18 @@ function main() {
 	SCRIPT_DIR="$(realpath "$(dirname "${BASH_SOURCE[0]}")")"
 	APEDF_DIR="$(realpath "$SCRIPT_DIR/..")"
 
+	PLACEMENT=global
+	if uname -a | grep apedf >/dev/null 2>&1 ; then
+		PLACEMENT=apedf
+	fi
+
 	cd "$APEDF_DIR"
 
+	OUTDIR=out/$PLACEMENT
+
 	for ntasks in 06 08 12 16; do
-		run_ntasks_with_governor "$ntasks" performance
-		run_ntasks_with_governor "$ntasks" schedutil
+		run_ntasks_with_governor "$ntasks" "$OUTDIR" performance
+		run_ntasks_with_governor "$ntasks" "$OUTDIR" schedutil
 	done
 
 	echo "++++++++++ END OF EXPERIMENTS MARKER ++++++++++"
