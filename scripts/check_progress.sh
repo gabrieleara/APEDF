@@ -13,8 +13,8 @@ function main() {
 	PROGRESS_FILE="last_experiment.log"
 	TMP_FILE=$(mktemp)
 
-	# Check that the experiment script is running
-	if pgrep multiple-experiment-wrapper.sh >/dev/null; then
+	# Check whether there is a screen named 'experiment' around
+	if screen -ls | cut -d. -f2 | tail -n +2 | cut -d$'\t' -f1 | grep -q experiment; then
 		running=1
 	else
 		running=0

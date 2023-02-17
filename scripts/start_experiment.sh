@@ -28,11 +28,11 @@ function main() {
 		return 1
 	fi
 
-	# Check that the experiment script is running
-	if pgrep multiple-experiment-wrapper.sh >/dev/null; then
-		echo "An experiment is already running!" >&2
-		return 1
-	fi
+	# # Check that the experiment script is running
+	# if pgrep multiple-experiment-wrapper.sh >/dev/null; then
+	# 	echo "An experiment is already running!" >&2
+	# 	return 1
+	# fi
 
 	# Start experiment in a detached screen named "experiment"
 	screen -L -Logfile last_experiment.log \
