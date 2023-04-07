@@ -1,25 +1,25 @@
-From 6012f0982f1b2d80ff1fcbc47589f663cf4b10d6 Mon Sep 17 00:00:00 2001
+From a06d3c4bd059fed2f116ffc22d025c1258ade791 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
-Date: Wed, 25 Jan 2023 13:24:22 +0100
-Subject: Change extraversion
+Date: Wed, 25 Jan 2023 13:23:34 +0100
+Subject: [PATCH 03/10] Add apedf extraversion
 
 ---
  Makefile | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/Makefile b/Makefile
-index e113012186f8..9c081b5f937e 100644
+index c879c2f77ccc..0d95f71726a4 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -2,7 +2,7 @@
  VERSION = 5
  PATCHLEVEL = 4
- SUBLEVEL = 228
--EXTRAVERSION =-apedf1
-+EXTRAVERSION =-apedf2
+ SUBLEVEL = 236
+-EXTRAVERSION =
++EXTRAVERSION =-apedf1
  NAME = Kleptomaniac Octopus
  
  # *DOCUMENTATION*
 -- 
-2.25.1
+2.40.0
 

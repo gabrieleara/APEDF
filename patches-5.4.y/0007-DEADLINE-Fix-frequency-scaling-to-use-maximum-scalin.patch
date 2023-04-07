@@ -1,4 +1,4 @@
-From 98b360902dd4bc6a6007398db88c3031ca268280 Mon Sep 17 00:00:00 2001
+From 1efca07c3d6868df39ce537fc60fac91e92ed2b3 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Thu, 12 Jan 2023 13:46:50 +0000
 Subject: DEADLINE: Fix frequency scaling to use maximum scaling allowed by
@@ -9,7 +9,7 @@ Subject: DEADLINE: Fix frequency scaling to use maximum scaling allowed by
  1 file changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index d8052c2d87e4..1ff74a6708bd 100644
+index ba3d7c223999..5e6be9b97f5b 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1246,7 +1246,16 @@ static void update_curr_dl(struct rq *rq)
@@ -31,5 +31,5 @@ index d8052c2d87e4..1ff74a6708bd 100644
  
  		scaled_delta_exec = cap_scale(delta_exec, scale_freq);
 -- 
-2.25.1
+2.40.0
 

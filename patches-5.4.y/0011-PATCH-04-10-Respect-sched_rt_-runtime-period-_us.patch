@@ -1,4 +1,4 @@
-From cceaa0cbedf38f383c00f5031ea1c2f899eba6b9 Mon Sep 17 00:00:00 2001
+From d4c2dee4f1ea21d5f25c0838d317b28ae11598a1 Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:13:35 +0000
 Subject: [PATCH 04/10] Respect sched_rt_{runtime,period}_us
@@ -9,7 +9,7 @@ Subject: [PATCH 04/10] Respect sched_rt_{runtime,period}_us
  2 files changed, 12 insertions(+), 7 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index dc9c8179990f..63dc71e622b5 100644
+index 245127f54be1..b1937136826a 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1078,7 +1078,7 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
@@ -38,8 +38,8 @@ index dc9c8179990f..63dc71e622b5 100644
 +	if (rq->dl.this_bw > rq->dl.max_bw) deadline_queue_push_tasks(rq);
  }
  
- static struct sched_dl_entity *pick_next_dl_entity(struct rq *rq,
-@@ -2012,7 +2012,7 @@ static int find_later_rq_ff(struct task_struct *task)
+ static struct sched_dl_entity *pick_next_dl_entity(struct dl_rq *dl_rq)
+@@ -2011,7 +2011,7 @@ static int find_later_rq_ff(struct task_struct *task)
  		struct rq *rq = cpu_rq(i);
  		u64 added_bw = i == task_cpu(task) ? 0 : task->dl.dl_bw;
  
@@ -48,7 +48,7 @@ index dc9c8179990f..63dc71e622b5 100644
  			return i;
  		}
  	}
-@@ -2110,7 +2110,7 @@ static struct rq *find_lock_later_rq_ff(struct task_struct *task, struct rq *rq)
+@@ -2109,7 +2109,7 @@ static struct rq *find_lock_later_rq_ff(struct task_struct *task, struct rq *rq)
  		 * its earliest one has a later deadline than our
  		 * task, the rq is a good one.
  		 */
@@ -57,7 +57,7 @@ index dc9c8179990f..63dc71e622b5 100644
  			break;
  
  		/* Otherwise we try again. */
-@@ -2164,7 +2164,7 @@ static int push_dl_task(struct rq *rq)
+@@ -2163,7 +2163,7 @@ static int push_dl_task(struct rq *rq)
  	later_rq = find_lock_later_rq_ff(next_task, rq);
  	if (!later_rq) {
  		struct task_struct *task;
@@ -66,7 +66,7 @@ index dc9c8179990f..63dc71e622b5 100644
  			return 0;
  
  retry:
-@@ -2480,7 +2480,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
+@@ -2479,7 +2479,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
  
  	if (rq->curr != p) {
  #ifdef CONFIG_SMP
@@ -75,7 +75,7 @@ index dc9c8179990f..63dc71e622b5 100644
  			deadline_queue_push_tasks(rq);
  #endif
  		if (dl_task(rq->curr))
-@@ -2594,11 +2594,14 @@ void init_dl_rq_bw_ratio(struct dl_rq *dl_rq)
+@@ -2593,11 +2593,14 @@ void init_dl_rq_bw_ratio(struct dl_rq *dl_rq)
  	if (global_rt_runtime() == RUNTIME_INF) {
  		dl_rq->bw_ratio = 1 << RATIO_SHIFT;
  		dl_rq->extra_bw = 1 << BW_SHIFT;
@@ -104,5 +104,5 @@ index b8a3db59e326..ecc520b26a78 100644
  
  #ifdef CONFIG_FAIR_GROUP_SCHED
 -- 
-2.25.1
+2.40.0
 

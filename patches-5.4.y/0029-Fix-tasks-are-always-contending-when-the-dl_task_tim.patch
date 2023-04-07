@@ -1,4 +1,4 @@
-From d3886d287985dbca3dc65f030be0b5785e2e6403 Mon Sep 17 00:00:00 2001
+From df25015e9ed996e4833afbe012a4cdb205cb54d9 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Mon, 13 Feb 2023 11:25:34 +0000
 Subject: Fix: tasks are always contending when the dl_task_timer fires
@@ -8,7 +8,7 @@ Subject: Fix: tasks are always contending when the dl_task_timer fires
  1 file changed, 3 insertions(+)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 5427e95fecc9..cfbf4ae4f980 100644
+index 196507e3b912..627e3bd4f715 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1017,8 +1017,11 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
@@ -24,5 +24,5 @@ index 5427e95fecc9..cfbf4ae4f980 100644
  	}
  
 -- 
-2.25.1
+2.40.0
 

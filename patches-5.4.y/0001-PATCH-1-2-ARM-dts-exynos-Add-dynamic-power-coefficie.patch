@@ -1,4 +1,4 @@
-From 3b675ce2b36de07f50e1ab13faed3f5f189992a3 Mon Sep 17 00:00:00 2001
+From d749a5eab7c21da1af352c16a5c72732e88c0e25 Mon Sep 17 00:00:00 2001
 From: Lukasz Luba <lukasz.luba@arm.com>
 Date: Wed, 19 Feb 2020 09:58:27 +0000
 Subject: [PATCH 1/2] ARM: dts: exynos: Add dynamic-power-coefficient to
@@ -89,5 +89,5 @@ index aea3893fed24..9615e90358bc 100644
  	};
  };
 -- 
-2.25.1
+2.40.0
 

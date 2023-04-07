@@ -1,4 +1,4 @@
-From 47ecf6eb54cf6ea226266aa56a24cbda6c2f1ca3 Mon Sep 17 00:00:00 2001
+From bc8c73311be21c3413485fe06fb24e30066fcde9 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Thu, 19 Jan 2023 10:14:34 +0000
 Subject: [PATCH 2/3] SCHEDUTIL: use user-defined maximum frequency instead of
@@ -9,10 +9,10 @@ Subject: [PATCH 2/3] SCHEDUTIL: use user-defined maximum frequency instead of
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/sched/cpufreq_schedutil.c b/kernel/sched/cpufreq_schedutil.c
-index 378ae2342208..798e6ad6e0b7 100644
+index bc8f630c0a33..22795460682c 100644
 --- a/kernel/sched/cpufreq_schedutil.c
 +++ b/kernel/sched/cpufreq_schedutil.c
-@@ -171,7 +171,7 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
+@@ -176,7 +176,7 @@ static unsigned int get_next_freq(struct sugov_policy *sg_policy,
  {
  	struct cpufreq_policy *policy = sg_policy->policy;
  	unsigned int freq = arch_scale_freq_invariant() ?
@@ -22,5 +22,5 @@ index 378ae2342208..798e6ad6e0b7 100644
  	freq = map_util_freq(util, freq, max);
  
 -- 
-2.25.1
+2.40.0
 

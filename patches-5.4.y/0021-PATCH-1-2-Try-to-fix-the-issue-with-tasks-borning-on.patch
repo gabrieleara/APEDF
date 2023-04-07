@@ -1,4 +1,4 @@
-From 8935057de475586f10dbab378349315b5b8b514c Mon Sep 17 00:00:00 2001
+From 92e789d61971a87448345852e6ea9ebc7526c837 Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Sat, 26 Nov 2022 11:02:21 +0100
 Subject: [PATCH 1/2] Try to fix the issue with tasks "borning" on the wrong
@@ -34,7 +34,7 @@ index d0e639497b10..554ac199a15b 100644
  	/*
  	 * Bandwidth enforcement timer. Each -deadline task has its
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index fab9a71b7d1c..f117aa089298 100644
+index 97ede1e0d70d..9831ad57f152 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1669,6 +1669,11 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
@@ -57,7 +57,7 @@ index fab9a71b7d1c..f117aa089298 100644
  	rcu_read_unlock();
  
  out:
-@@ -2220,7 +2226,7 @@ static int push_dl_task(struct rq *rq)
+@@ -2219,7 +2225,7 @@ static int push_dl_task(struct rq *rq)
  		next_task = pushable_dl_task(rq, node);
  
  		/* Do we still WANT to push tasks? */
@@ -66,7 +66,7 @@ index fab9a71b7d1c..f117aa089298 100644
  			return 0;
  		}
  
-@@ -2266,6 +2272,7 @@ static int push_dl_task(struct rq *rq)
+@@ -2265,6 +2271,7 @@ static int push_dl_task(struct rq *rq)
  		resched_curr(later_rq);
  
  		double_unlock_balance(rq, later_rq);
@@ -74,7 +74,7 @@ index fab9a71b7d1c..f117aa089298 100644
  		put_task_struct(next_task);
  		return 1;
  	}
-@@ -2530,6 +2537,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
+@@ -2529,6 +2536,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
  		return;
  	}
  
@@ -83,5 +83,5 @@ index fab9a71b7d1c..f117aa089298 100644
  #ifdef CONFIG_SMP
  		if (rq->dl.this_bw > rq->dl.max_bw)
 -- 
-2.25.1
+2.40.0
 

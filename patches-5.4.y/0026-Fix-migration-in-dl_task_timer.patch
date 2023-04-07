@@ -1,4 +1,4 @@
-From c0d485be93e717d867a50a8cadbe77e7998c66a4 Mon Sep 17 00:00:00 2001
+From 4ee462cd57a1480fe10e5f43a71b52fa8e3e0f95 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Mon, 6 Feb 2023 13:47:00 +0000
 Subject: Fix migration in dl_task_timer
@@ -8,7 +8,7 @@ Subject: Fix migration in dl_task_timer
  1 file changed, 19 insertions(+)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index d993dbb9ac88..b1ed2ccd836b 100644
+index 5519cfc5400c..62733dbb5eb2 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1005,11 +1005,21 @@ static enum hrtimer_restart dl_task_timer(struct hrtimer *timer)
@@ -51,5 +51,5 @@ index d993dbb9ac88..b1ed2ccd836b 100644
  		check_preempt_curr_dl(rq, p, 0);
  	else
 -- 
-2.25.1
+2.40.0
 

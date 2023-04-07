@@ -1,4 +1,4 @@
-From 756b39078200091867129e237ac796eee7f764ee Mon Sep 17 00:00:00 2001
+From ad54a2b24d97dcaf22d07f7fdb683418e24182cb Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Thu, 24 Nov 2022 12:04:21 +0100
 Subject: [PATCH 2/3] Queue a push when a task misses a deadline
@@ -9,7 +9,7 @@ This probably means that the core is overloaded
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 0161897fbaa6..08d49e3c934e 100644
+index 255177dd0998..b95ca0f7148f 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1274,8 +1274,12 @@ static void update_curr_dl(struct rq *rq)
@@ -27,5 +27,5 @@ index 0161897fbaa6..08d49e3c934e 100644
  		if (!is_leftmost(curr, &rq->dl))
  			resched_curr(rq);
 -- 
-2.25.1
+2.40.0
 

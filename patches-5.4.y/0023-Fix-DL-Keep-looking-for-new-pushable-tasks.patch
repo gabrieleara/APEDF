@@ -1,4 +1,4 @@
-From e6fbb997b61282e59e9219b7fc7241770413dd77 Mon Sep 17 00:00:00 2001
+From d257a472e76a8d2a6c0cd0a686153d6dd7a11596 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Fri, 2 Dec 2022 11:25:42 +0000
 Subject: Fix DL: Keep looking for new pushable tasks
@@ -13,7 +13,7 @@ keeping a count of how many new pushable tasks there are on each rq.
  1 file changed, 22 insertions(+), 13 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index aced8e50cf3e..ace1466c4e75 100644
+index e6d831cabc3b..279355b4246b 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1496,7 +1496,7 @@ static void dequeue_dl_entity(struct sched_dl_entity *dl_se)
@@ -25,7 +25,7 @@ index aced8e50cf3e..ace1466c4e75 100644
  	bool contending;
  
  	if (is_dl_boosted(&p->dl)) {
-@@ -2216,20 +2216,19 @@ static int push_dl_task(struct rq *rq)
+@@ -2215,20 +2215,19 @@ static int push_dl_task(struct rq *rq)
  	     node = pushable_dl_next(rq, node, &trycount)) {
  		next_task = pushable_dl_task(rq, node);
  
@@ -52,7 +52,7 @@ index aced8e50cf3e..ace1466c4e75 100644
  
  		/*
  		 * Since we had to release the lock to find later_rq, check
-@@ -2238,17 +2237,27 @@ static int push_dl_task(struct rq *rq)
+@@ -2237,17 +2236,27 @@ static int push_dl_task(struct rq *rq)
  		 * NULL if we have to start again from the beginning.
  		 */
  		node = pushable_dl_find(rq, next_task);
@@ -86,5 +86,5 @@ index aced8e50cf3e..ace1466c4e75 100644
  		 */
  		deactivate_task(rq, next_task, 0);
 -- 
-2.25.1
+2.40.0
 

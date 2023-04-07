@@ -1,4 +1,4 @@
-From 1e244751863333a99a6465bcdcff7b72586ab5f5 Mon Sep 17 00:00:00 2001
+From 9d56901221d59a6833f5f9e46b5dc26076f2fb18 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Mon, 13 Feb 2023 10:04:13 +0000
 Subject: Fixing push_dl_task and adding fallback to G-EDF
@@ -8,10 +8,10 @@ Subject: Fixing push_dl_task and adding fallback to G-EDF
  1 file changed, 57 insertions(+)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index b1ed2ccd836b..808342c7637d 100644
+index 62733dbb5eb2..e31445794d29 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2268,9 +2268,66 @@ static int push_dl_task(struct rq *rq)
+@@ -2267,9 +2267,66 @@ static int push_dl_task(struct rq *rq)
  			 */
  			next_task->dl.dl_new = 0;
  			put_task_struct(next_task);
@@ -79,5 +79,5 @@ index b1ed2ccd836b..808342c7637d 100644
  		 * Task must still be moved and it can be
  		 * moved to later_rq, so we do it now.
 -- 
-2.25.1
+2.40.0
 

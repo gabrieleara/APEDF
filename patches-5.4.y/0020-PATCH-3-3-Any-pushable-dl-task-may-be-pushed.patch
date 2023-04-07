@@ -1,4 +1,4 @@
-From 8e5e110257bda39a02d10d5236e2057faac0f3ac Mon Sep 17 00:00:00 2001
+From 4c33ad3d171428f4904e56a3b24595b8e4d25b59 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Thu, 24 Nov 2022 12:26:00 +0100
 Subject: [PATCH 3/3] Any pushable dl task may be pushed
@@ -8,10 +8,10 @@ Subject: [PATCH 3/3] Any pushable dl task may be pushed
  1 file changed, 88 insertions(+), 58 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 08d49e3c934e..fab9a71b7d1c 100644
+index b95ca0f7148f..97ede1e0d70d 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
-@@ -2156,95 +2156,125 @@ static void pushable_dl_task_checkbugs(struct rq *rq, struct task_struct *p)
+@@ -2155,95 +2155,125 @@ static void pushable_dl_task_checkbugs(struct rq *rq, struct task_struct *p)
  	BUG_ON(!dl_task(p));
  }
  
@@ -196,5 +196,5 @@ index 08d49e3c934e..fab9a71b7d1c 100644
  {
  	/* push_dl_task() will return true if it moved a -deadline task */
 -- 
-2.25.1
+2.40.0
 

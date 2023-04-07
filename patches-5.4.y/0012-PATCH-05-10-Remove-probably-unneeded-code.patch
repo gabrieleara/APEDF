@@ -1,4 +1,4 @@
-From 1c544640ded849b018322a61be746d75e6a2895f Mon Sep 17 00:00:00 2001
+From 2554314f1e453551c2c47b7f41e17ef04c97449a Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:15:28 +0000
 Subject: [PATCH 05/10] Remove probably unneeded code
@@ -10,7 +10,7 @@ then doing gEDF is useless (it will be done later, by push)
  1 file changed, 2 insertions(+)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 63dc71e622b5..9b3ba4e9e51a 100644
+index b1937136826a..8bbee65f1275 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1663,6 +1663,7 @@ select_task_rq_dl(struct task_struct *p, int cpu, int sd_flag, int flags)
@@ -30,5 +30,5 @@ index 63dc71e622b5..9b3ba4e9e51a 100644
  	rcu_read_unlock();
  
 -- 
-2.25.1
+2.40.0
 

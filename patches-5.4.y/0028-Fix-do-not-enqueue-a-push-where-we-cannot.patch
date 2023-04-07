@@ -1,4 +1,4 @@
-From 707faef762a9e969842611c1a47b398bb16a24fe Mon Sep 17 00:00:00 2001
+From 3fb1ea2bbad4564cf7006fab5d5313a3642bacab Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Mon, 13 Feb 2023 10:17:49 +0000
 Subject: Fix: do not enqueue a push where we cannot
@@ -8,7 +8,7 @@ Subject: Fix: do not enqueue a push where we cannot
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 808342c7637d..5427e95fecc9 100644
+index e31445794d29..196507e3b912 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -1288,9 +1288,9 @@ static void update_curr_dl(struct rq *rq)
@@ -25,5 +25,5 @@ index 808342c7637d..5427e95fecc9 100644
  
  		if (!is_leftmost(curr, &rq->dl))
 -- 
-2.25.1
+2.40.0
 

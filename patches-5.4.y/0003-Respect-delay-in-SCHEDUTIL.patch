@@ -1,0 +1,28 @@
+From dd0c7c1522d1236b2d9336518eddcf8330535716 Mon Sep 17 00:00:00 2001
+From: Gabriele Ara <gabriele.ara@santannapisa.it>
+Date: Fri, 7 Apr 2023 12:08:17 +0000
+Subject: Respect delay in SCHEDUTIL
+
+---
+ kernel/sched/cpufreq_schedutil.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/kernel/sched/cpufreq_schedutil.c b/kernel/sched/cpufreq_schedutil.c
+index 831fee509404..43f5481fc675 100644
+--- a/kernel/sched/cpufreq_schedutil.c
++++ b/kernel/sched/cpufreq_schedutil.c
+@@ -105,6 +105,11 @@ static bool sugov_update_next_freq(struct sugov_policy *sg_policy, u64 time,
+ 	if (sg_policy->next_freq == next_freq)
+ 		return false;
+ 
++	s64 delta_ns = time - sg_policy->last_freq_update_time;
++	/* Reject requests to decrease the frequency before the delay is expired */
++	if (sg_policy->next_freq > next_freq && delta_ns < sg_policy->freq_update_delay_ns;)
++		return false;
++
+ 	sg_policy->next_freq = next_freq;
+ 	sg_policy->last_freq_update_time = time;
+ 
+-- 
+2.40.0
+

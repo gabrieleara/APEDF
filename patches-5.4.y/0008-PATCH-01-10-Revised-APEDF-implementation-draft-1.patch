@@ -1,4 +1,4 @@
-From c5a0eead9f90c62534b5b68011812bbe05028853 Mon Sep 17 00:00:00 2001
+From aaf6793851fd0b6f09df94b01386166d6014c296 Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:07:12 +0000
 Subject: [PATCH 01/10] Revised APEDF implementation, draft 1
@@ -9,7 +9,7 @@ Subject: [PATCH 01/10] Revised APEDF implementation, draft 1
  2 files changed, 121 insertions(+), 73 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 1ff74a6708bd..7b79a81510a0 100644
+index 5e6be9b97f5b..3b4bc1794e27 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -524,7 +524,7 @@ static int push_dl_task(struct rq *rq);
@@ -88,8 +88,8 @@ index 1ff74a6708bd..7b79a81510a0 100644
 +	if (rq->dl.this_bw > 1 << BW_SHIFT) deadline_queue_push_tasks(rq);
  }
  
- static struct sched_dl_entity *pick_next_dl_entity(struct rq *rq,
-@@ -1837,8 +1837,9 @@ static void put_prev_task_dl(struct rq *rq, struct task_struct *p)
+ static struct sched_dl_entity *pick_next_dl_entity(struct dl_rq *dl_rq)
+@@ -1836,8 +1836,9 @@ static void put_prev_task_dl(struct rq *rq, struct task_struct *p)
  	update_curr_dl(rq);
  
  	update_dl_rq_load_avg(rq_clock_pelt(rq), rq, 1);
@@ -100,7 +100,7 @@ index 1ff74a6708bd..7b79a81510a0 100644
  }
  
  /*
-@@ -2000,6 +2001,24 @@ static int find_later_rq(struct task_struct *task)
+@@ -1999,6 +2000,24 @@ static int find_later_rq(struct task_struct *task)
  	return -1;
  }
  
@@ -125,7 +125,7 @@ index 1ff74a6708bd..7b79a81510a0 100644
  /* Locks the rq it finds */
  static struct rq *find_lock_later_rq(struct task_struct *task, struct rq *rq)
  {
-@@ -2058,6 +2077,49 @@ static struct rq *find_lock_later_rq(struct task_struct *task, struct rq *rq)
+@@ -2057,6 +2076,49 @@ static struct rq *find_lock_later_rq(struct task_struct *task, struct rq *rq)
  	return later_rq;
  }
  
@@ -175,7 +175,7 @@ index 1ff74a6708bd..7b79a81510a0 100644
  static struct task_struct *pick_next_pushable_dl_task(struct rq *rq)
  {
  	struct task_struct *p;
-@@ -2086,61 +2148,52 @@ static struct task_struct *pick_next_pushable_dl_task(struct rq *rq)
+@@ -2085,61 +2147,52 @@ static struct task_struct *pick_next_pushable_dl_task(struct rq *rq)
  static int push_dl_task(struct rq *rq)
  {
  	struct task_struct *next_task;
@@ -265,7 +265,7 @@ index 1ff74a6708bd..7b79a81510a0 100644
  	}
  
  	deactivate_task(rq, next_task, 0);
-@@ -2404,7 +2457,8 @@ static void switched_from_dl(struct rq *rq, struct task_struct *p)
+@@ -2403,7 +2456,8 @@ static void switched_from_dl(struct rq *rq, struct task_struct *p)
  	if (!task_on_rq_queued(p) || rq->dl.dl_nr_running)
  		return;
  
@@ -275,7 +275,7 @@ index 1ff74a6708bd..7b79a81510a0 100644
  }
  
  /*
-@@ -2425,7 +2479,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
+@@ -2424,7 +2478,7 @@ static void switched_to_dl(struct rq *rq, struct task_struct *p)
  
  	if (rq->curr != p) {
  #ifdef CONFIG_SMP
@@ -284,7 +284,7 @@ index 1ff74a6708bd..7b79a81510a0 100644
  			deadline_queue_push_tasks(rq);
  #endif
  		if (dl_task(rq->curr))
-@@ -2446,15 +2500,7 @@ static void prio_changed_dl(struct rq *rq, struct task_struct *p,
+@@ -2445,15 +2499,7 @@ static void prio_changed_dl(struct rq *rq, struct task_struct *p,
  {
  	if (task_on_rq_queued(p) || rq->curr == p) {
  #ifdef CONFIG_SMP
@@ -312,5 +312,5 @@ index 66c74aa4753e..8fed725781ff 100644
 +
 +SCHED_FEAT(A2PEDF, false)
 -- 
-2.25.1
+2.40.0
 

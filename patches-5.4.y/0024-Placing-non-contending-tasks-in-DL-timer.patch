@@ -1,4 +1,4 @@
-From 2068a73f1cd5dd72d07a27903a822bad02cd24d5 Mon Sep 17 00:00:00 2001
+From 74c33040e1abff784f2bc77c1f23230c703ead31 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Fri, 2 Dec 2022 13:58:32 +0000
 Subject: Placing non contending tasks in DL timer
@@ -8,7 +8,7 @@ Subject: Placing non contending tasks in DL timer
  1 file changed, 6 insertions(+), 10 deletions(-)
 
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index ace1466c4e75..d993dbb9ac88 100644
+index 279355b4246b..5519cfc5400c 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -982,7 +982,7 @@ static int start_dl_timer(struct task_struct *p)
@@ -44,7 +44,7 @@ index ace1466c4e75..d993dbb9ac88 100644
  
  	rcu_read_lock();
  
-@@ -2216,10 +2216,6 @@ static int push_dl_task(struct rq *rq)
+@@ -2215,10 +2215,6 @@ static int push_dl_task(struct rq *rq)
  	     node = pushable_dl_next(rq, node, &trycount)) {
  		next_task = pushable_dl_task(rq, node);
  
@@ -56,5 +56,5 @@ index ace1466c4e75..d993dbb9ac88 100644
  		if (rq->dl.this_bw <= rq->dl.max_bw && next_task->dl.dl_new == 0) {
  			continue;
 -- 
-2.25.1
+2.40.0
 
