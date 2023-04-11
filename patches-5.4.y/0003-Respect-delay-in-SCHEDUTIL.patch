@@ -14,15 +14,14 @@ index 831fee509404..43f5481fc675 100644
 @@ -105,6 +105,11 @@ static bool sugov_update_next_freq(struct sugov_policy *sg_policy, u64 time,
  	if (sg_policy->next_freq == next_freq)
  		return false;
- 
+
 +	s64 delta_ns = time - sg_policy->last_freq_update_time;
 +	/* Reject requests to decrease the frequency before the delay is expired */
-+	if (sg_policy->next_freq > next_freq && delta_ns < sg_policy->freq_update_delay_ns;)
++	if (sg_policy->next_freq > next_freq && delta_ns < sg_policy->freq_update_delay_ns)
 +		return false;
 +
  	sg_policy->next_freq = next_freq;
  	sg_policy->last_freq_update_time = time;
- 
--- 
-2.40.0
 
+--
+2.40.0
