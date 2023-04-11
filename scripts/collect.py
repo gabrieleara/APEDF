@@ -59,6 +59,10 @@ class ThermalThrottling(Exception):
     pass
 
 
+class EmptyExperiment(Exception):
+    pass
+
+
 def parse_task(task_logfile):
     # Logfiles have multiple spaces as a single separator
     task_log = pd.read_csv(task_logfile, delimiter=r"\s+")
@@ -88,6 +92,15 @@ def parse_task(task_logfile):
     # - dl_period   STATIC  [us]    SCHED_DEADLINE parameter
     # - dl_deadline STATIC  [us]    SCHED_DEADLINE parameter
 
+    # Drop first 10 seconds
+    # exp_start_time = task_log['start'][0]
+    # task_log = task_log[task_log['start'] > exp_start_time + 30 * 1000000]
+    # task_log = task_log.reset_index()
+
+    if task_log.empty:
+        print("ERROR:", task_logfile)
+        raise EmptyExperiment
+
     # Collapse all static fields in a more accessible struct
     STATIC_FIELDS = [
         'idx',
@@ -99,13 +112,15 @@ def parse_task(task_logfile):
         'dl_deadline',
         # Assuming that there are zero migrations:
         'cpu',
-        # Assuming that there is no thermal throttling
+        # Not really but sure
         'freq',
     ]
     task_info = {
         'filename': task_logfile,
     }
     for field in STATIC_FIELDS:
+        # print(field)
+        # print(task_log)
         task_info[field] = task_log[field][0]
 
     # For now we skip all tasks with not enough runtime
@@ -120,17 +135,18 @@ def parse_task(task_logfile):
     task_log['exec_ratio_to_reservation'] = task_log['run'] / \
         (task_log['dl_runtime'])
 
-    # Count the number of overruns, if positive of course we have misses!
-    num_overruns = task_log['exec_ratio_to_reservation'].ge(1).sum()
     # Count all rows
     count = task_log['slack'].count()
-    if num_overruns > 5 and DISCARD_OVERRUN:
-        eprint(
-            f"{num_overruns} / {count} !!")
-        raise Overrun
 
-    if len(task_log['freq'].unique()) != 1:
-        raise ThermalThrottling
+    # # Count the number of overruns, if positive of course we have misses!
+    # num_overruns = task_log['exec_ratio_to_reservation'].ge(1).sum()
+    # if num_overruns > 5 and DISCARD_OVERRUN:
+    #     eprint(
+    #         f"{num_overruns} / {count} !!")
+    #     raise Overrun
+
+    # if len(task_log['freq'].unique()) != 1 or task_log['freq'][0] != 1400:
+    #     raise ThermalThrottling
 
     # If we get here, everything should be alright (exception thrown by other
     # tasks must be taken into account in the taskset parser function, so that
@@ -182,6 +198,7 @@ def parse_taskset(tset_dir):
 
     tset_stats = {
         **tset_info,
+        'freq': 0,
         'count': 0,
         'misses': 0,
         'miss_ratio': 0,
@@ -219,6 +236,7 @@ def parse_taskset(tset_dir):
             tstats['minslack'], tset_stats['minslack'])
         tset_stats['maxslack'] = max(
             tstats['maxslack'], tset_stats['maxslack'])
+        # tset_stats['freq'] =
 
     try:
         tset_stats['miss_ratio'] = tset_stats['misses'] / tset_stats['count']
