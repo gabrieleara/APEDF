@@ -52,6 +52,7 @@ def main():
     for number, group in data.groupby('num_tasks'):
         # if number == 16:
         #     continue
+        # miss_ratio or misses
         axis.scatter(group['util'], group['miss_ratio'], label=f"{number:02d} tasks", alpha=.3)
 
     # # data.groupby('num_tasks').plot(x='util', y='miss_ratio', kind='scatter', legend=True, ax=axis)
@@ -60,8 +61,10 @@ def main():
     axis.set(
         xlabel='Taskset Utilization',
         ylabel='Deadline Miss Ratio',
+        # ylabel='Number of Misses',
         title='',
     )
+    axis.set_ylim(top=1.0) # comment me out for abs value
     axis.grid()
     axis.legend()
 

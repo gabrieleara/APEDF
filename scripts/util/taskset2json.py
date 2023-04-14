@@ -104,13 +104,13 @@ def parse_args():
     parser.add_argument('-m', '--min-duration',
                         default='20',
                         type=int,
-                        help="The minimum duration in seconds of the taskset exectution",
+                        help="The minimum duration in seconds of the taskset execution",
                         )
 
     parser.add_argument('-M', '--max-duration',
                         default='600',
                         type=int,
-                        help="The maximum duration in seconds of the taskset exectution",
+                        help="The maximum duration in seconds of the taskset execution",
                         )
 
     parser.add_argument('-c', '--calibration',

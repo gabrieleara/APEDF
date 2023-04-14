@@ -1,7 +1,7 @@
 #!/bin/bash
 
 main() {
-	for s in global apedf; do
+	for s in global apedf apedfwf; do
 		for g in performance schedutil; do
 			if ! [ -d "$1/$s" ] ; then
 				continue

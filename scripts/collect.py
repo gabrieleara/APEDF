@@ -94,8 +94,13 @@ def parse_task(task_logfile):
 
     # Drop first 10 seconds
     # exp_start_time = task_log['start'][0]
-    # task_log = task_log[task_log['start'] > exp_start_time + 30 * 1000000]
+    # task_log = task_log[task_log['start'] > exp_start_time + 10 * 1000000]
     # task_log = task_log.reset_index()
+
+    # Drop after the first 50 seconds
+    exp_start_time = task_log['start'][0]
+    task_log = task_log[task_log['end'] <= exp_start_time + 59 * 1000000]
+    task_log = task_log.reset_index()
 
     if task_log.empty:
         print("ERROR:", task_logfile)
@@ -137,6 +142,9 @@ def parse_task(task_logfile):
 
     # Count all rows
     count = task_log['slack'].count()
+
+    # Approximate experiment duration
+    tot_duration = task_log['end'].max() - task_log['start'].min()
 
     # # Count the number of overruns, if positive of course we have misses!
     # num_overruns = task_log['exec_ratio_to_reservation'].ge(1).sum()
@@ -180,18 +188,35 @@ def parse_task(task_logfile):
         'minslack':     minslack,
         'maxslack':     maxslack,
         'migrations':   migrations,
+        'tot_duration': tot_duration,
     }
 
 
 def parse_taskset(tset_dir):
+    global tsets_type
+
     tset_dirname = os.path.basename(tset_dir)
     tset_info = parse.parse("ts_n{num_tasks:2d}_i{tset_idx:2d}_u{util:f}.rt-app.d",
                             tset_dirname)
+    mperiod_info = parse.parse("{period:d}.rt-app.d", tset_dirname)
 
-    if tset_info is None:
+    if tset_info is None and mperiod_info is None:
         eprint(
             f"Error: invalid directory specified, could not parse taskset data from directory {tset_dir}")
         sys.exit(1)
+
+    # Special for dhall-effect tasks
+    if tset_info is None:
+        tset_info = mperiod_info
+        if tsets_type is not None and tsets_type != 'dhall':
+            eprint(f"Multiple taskset types (both {tsets_type} and dhall)")
+            sys.exit(1)
+        tsets_type = 'dhall'
+    else:
+        if tsets_type is not None and tsets_type != 'regular':
+            eprint(f"Multiple taskset types (both {tsets_type} and regular)")
+            sys.exit(1)
+        tsets_type = 'regular'
 
     # Get dictionary from parse result type
     tset_info = tset_info.named
@@ -247,6 +272,7 @@ def parse_taskset(tset_dir):
     # 2. List of the stats of each task
     return tset_stats, tasks_stats
 
+tsets_type = None
 
 def main():
     global PRINT_MISSES
@@ -289,7 +315,12 @@ def main():
     tasks_stats = pd.DataFrame(tasks_rows)
     tsets_stats = pd.DataFrame(tsets_rows)
 
-    tsets_cols_order = ['num_tasks', 'util', 'tset_idx']
+    global tsets_type
+    if tsets_type == 'dhall':
+        tsets_cols_order = ['period']
+    else:
+        tsets_cols_order = ['num_tasks', 'util', 'tset_idx',]
+
     tasks_cols_order = tsets_cols_order + ['idx']
 
     # Sort the rows in ascending order according to these columns
