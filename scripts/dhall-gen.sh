@@ -43,6 +43,7 @@ function main() {
                     -r "1.0" \
                     -q "3.8" \
                     -R "2000" \
+                    -T \
                     <"$text_file" >"$json_file"
                 #     -r "$GT_RT_FRACTION" \
                 #     -m "$GT_RT_MIN_DURATION" \

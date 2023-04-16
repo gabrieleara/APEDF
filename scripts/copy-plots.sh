@@ -11,10 +11,19 @@ function main() {
 		return 1
 	fi
 
-	for scheduler in global apedf apedfwf; do
+	for FORMAT in png svg; do
 		for governor in performance schedutil; do
-			for infile_basename in "$governor.abs.png" "$governor.ratio.png" "$governor.freq.png"; do
-				cp $indir/$scheduler/$infile_basename $outdir/$scheduler-$infile_basename
+			for plot_type in min max mean q20 q50 q90; do
+				cp $indir/multi/$governor.freq-lines.$plot_type.$FORMAT $outdir/multi.$governor.freq-lines.$plot_type.$FORMAT
+			done
+		done
+
+		for scheduler in global apedf apedfwf; do
+			for governor in performance schedutil; do
+				for plot_type in abs ratio freq.mean freq.min freq.max; do
+					cp $indir/$scheduler/$governor.$plot_type.$FORMAT $outdir/$scheduler.$governor.$plot_type.$FORMAT
+				done
+
 			done
 		done
 	done
