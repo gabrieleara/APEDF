@@ -57,7 +57,7 @@ def make_plot(data, outfile, absolute=True):
     axis.set_ylim(top=ylim_top, bottom=ylim_bottom)
     axis.grid()
     axis.legend()
-    figure.savefig(outfile)
+    figure.savefig(outfile, transparent=True)
 
 # which: choose from 'mean', 'max', 'min'
 def make_plot_freq(data, outfile, performance=False, which='mean'):
@@ -83,7 +83,7 @@ def make_plot_freq(data, outfile, performance=False, which='mean'):
     axis.set_ylim(top=1.5, bottom=bottom)
     axis.grid()
     axis.legend()
-    figure.savefig(outfile)
+    figure.savefig(outfile, transparent=True)
 
 def main():
     args = parse_args()

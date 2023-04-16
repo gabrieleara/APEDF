@@ -58,7 +58,7 @@ def make_plot(data_dict, outfile, which='mean', quantile=.5):
     axis.set_ylim(top=1.5, bottom=0)
     axis.grid()
     axis.legend()
-    figure.savefig(outfile)
+    figure.savefig(outfile, transparent=True)
 
 def read_data(infile):
     data = pd.read_csv(infile, sep='\t', index_col=None)

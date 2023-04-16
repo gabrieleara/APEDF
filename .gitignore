@@ -1,2 +1,9 @@
 kernels/
 tests/
+out-20*/
+old/
+/*.csv
+/*.png
+/*.tar
+/OLD/
+/experiments/
