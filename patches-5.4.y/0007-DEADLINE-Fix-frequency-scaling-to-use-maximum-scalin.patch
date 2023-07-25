@@ -1,8 +1,8 @@
-From 1efca07c3d6868df39ce537fc60fac91e92ed2b3 Mon Sep 17 00:00:00 2001
+From c8d60019c11d0ad6e1b62301d9529a1c3a099316 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Thu, 12 Jan 2023 13:46:50 +0000
-Subject: DEADLINE: Fix frequency scaling to use maximum scaling allowed by
- CPUFreq
+Subject: [PATCH 07/30] DEADLINE: Fix frequency scaling to use maximum scaling
+ allowed by CPUFreq
 
 ---
  kernel/sched/deadline.c | 11 ++++++++++-
@@ -31,5 +31,5 @@ index ba3d7c223999..5e6be9b97f5b 100644
  
  		scaled_delta_exec = cap_scale(delta_exec, scale_freq);
 -- 
-2.40.0
+2.41.0
 

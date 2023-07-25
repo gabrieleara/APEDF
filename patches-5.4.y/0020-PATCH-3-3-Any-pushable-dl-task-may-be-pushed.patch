@@ -1,7 +1,7 @@
-From 4c33ad3d171428f4904e56a3b24595b8e4d25b59 Mon Sep 17 00:00:00 2001
+From d6988d65b9af3ae9fde2c16ce586dd6c5ae38817 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Thu, 24 Nov 2022 12:26:00 +0100
-Subject: [PATCH 3/3] Any pushable dl task may be pushed
+Subject: [PATCH 20/30] [PATCH 3/3] Any pushable dl task may be pushed
 
 ---
  kernel/sched/deadline.c | 146 ++++++++++++++++++++++++----------------
@@ -196,5 +196,5 @@ index b95ca0f7148f..97ede1e0d70d 100644
  {
  	/* push_dl_task() will return true if it moved a -deadline task */
 -- 
-2.40.0
+2.41.0
 

@@ -1,7 +1,8 @@
-From bd65072cd97ab163fff215237f68a3a40c558488 Mon Sep 17 00:00:00 2001
+From efe74c9f4a3a17e0e36e2c1ae7cea121254a8c86 Mon Sep 17 00:00:00 2001
 From: Lukasz Luba <lukasz.luba@arm.com>
 Date: Wed, 19 Feb 2020 09:58:28 +0000
-Subject: [PATCH 2/2] ARM: exynos_defconfig: Enable SCHED_MC and ENERGY_MODEL
+Subject: [PATCH 02/30] [PATCH 2/2] ARM: exynos_defconfig: Enable SCHED_MC and
+ ENERGY_MODEL
 
 The Energy Model (EM) is needed to run Energy Aware Scheduler (EAS).
 Enable ENERGY_MODEL to make that happen. This will increase energy
@@ -38,5 +39,5 @@ index 5c966cad2b0b..06c615e2dca9 100644
  CONFIG_CPU_FREQ_STAT=y
  CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND=y
 -- 
-2.40.0
+2.41.0
 

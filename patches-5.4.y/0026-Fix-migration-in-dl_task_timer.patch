@@ -1,7 +1,7 @@
-From 4ee462cd57a1480fe10e5f43a71b52fa8e3e0f95 Mon Sep 17 00:00:00 2001
+From ea7c1c8334e620e4c4f9d8822bcc4248b7d7f47a Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Mon, 6 Feb 2023 13:47:00 +0000
-Subject: Fix migration in dl_task_timer
+Subject: [PATCH 26/30] Fix migration in dl_task_timer
 
 ---
  kernel/sched/deadline.c | 19 +++++++++++++++++++
@@ -51,5 +51,5 @@ index 5519cfc5400c..62733dbb5eb2 100644
  		check_preempt_curr_dl(rq, p, 0);
  	else
 -- 
-2.40.0
+2.41.0
 

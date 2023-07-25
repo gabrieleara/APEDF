@@ -1,7 +1,7 @@
-From cdf425e5e2e039cbe126933cdfeccbbc77965267 Mon Sep 17 00:00:00 2001
+From ce5e457752b99d8049149e334d03cb2725fc7d2e Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:20:28 +0000
-Subject: [PATCH 10/10] Misc fixes
+Subject: [PATCH 17/30] [PATCH 10/10] Misc fixes
 
 ---
  kernel/sched/deadline.c | 8 +++++++-
@@ -41,5 +41,5 @@ index 1e9c4ed380fe..3357d2c5c6ad 100644
  }
  
 -- 
-2.40.0
+2.41.0
 

@@ -1,7 +1,8 @@
-From df25015e9ed996e4833afbe012a4cdb205cb54d9 Mon Sep 17 00:00:00 2001
+From 98a38eee924ecf217602ff5b938ba30750511bc9 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Mon, 13 Feb 2023 11:25:34 +0000
-Subject: Fix: tasks are always contending when the dl_task_timer fires
+Subject: [PATCH 29/30] Fix: tasks are always contending when the dl_task_timer
+ fires
 
 ---
  kernel/sched/deadline.c | 3 +++
@@ -24,5 +25,5 @@ index 196507e3b912..627e3bd4f715 100644
  	}
  
 -- 
-2.40.0
+2.41.0
 

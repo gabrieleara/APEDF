@@ -1,7 +1,7 @@
-From aaf6793851fd0b6f09df94b01386166d6014c296 Mon Sep 17 00:00:00 2001
+From 00e167d2be2bc6a356d67971b7445d08de683c2e Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:07:12 +0000
-Subject: [PATCH 01/10] Revised APEDF implementation, draft 1
+Subject: [PATCH 08/30] [PATCH 01/10] Revised APEDF implementation, draft 1
 
 ---
  kernel/sched/deadline.c | 192 +++++++++++++++++++++++++---------------
@@ -312,5 +312,5 @@ index 66c74aa4753e..8fed725781ff 100644
 +
 +SCHED_FEAT(A2PEDF, false)
 -- 
-2.40.0
+2.41.0
 

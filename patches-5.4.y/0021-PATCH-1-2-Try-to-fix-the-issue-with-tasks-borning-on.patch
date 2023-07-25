@@ -1,8 +1,8 @@
-From 92e789d61971a87448345852e6ea9ebc7526c837 Mon Sep 17 00:00:00 2001
+From c5e8fb2939e136b5b403ed5cb71d9155ba94b8f0 Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Sat, 26 Nov 2022 11:02:21 +0100
-Subject: [PATCH 1/2] Try to fix the issue with tasks "borning" on the wrong
- CPU core
+Subject: [PATCH 21/30] [PATCH 1/2] Try to fix the issue with tasks "borning"
+ on the wrong CPU core
 
 The apEDF FF heuristic would like to start tasks on core 0
 whenever possible (if there are no overloads).
@@ -83,5 +83,5 @@ index 97ede1e0d70d..9831ad57f152 100644
  #ifdef CONFIG_SMP
  		if (rq->dl.this_bw > rq->dl.max_bw)
 -- 
-2.40.0
+2.41.0
 

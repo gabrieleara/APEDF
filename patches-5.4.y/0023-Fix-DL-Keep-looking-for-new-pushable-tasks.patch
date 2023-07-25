@@ -1,7 +1,7 @@
-From d257a472e76a8d2a6c0cd0a686153d6dd7a11596 Mon Sep 17 00:00:00 2001
+From f6d1bb12b81f41d2ae77e3c0671d917319d2bd8a Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Fri, 2 Dec 2022 11:25:42 +0000
-Subject: Fix DL: Keep looking for new pushable tasks
+Subject: [PATCH 23/30] Fix DL: Keep looking for new pushable tasks
 
 This fix removes the preventive exit in case the bandwidth is enough and
 the first task in the list of pushable ones is not a new task.
@@ -86,5 +86,5 @@ index e6d831cabc3b..279355b4246b 100644
  		 */
  		deactivate_task(rq, next_task, 0);
 -- 
-2.40.0
+2.41.0
 

@@ -1,7 +1,7 @@
-From 9d56901221d59a6833f5f9e46b5dc26076f2fb18 Mon Sep 17 00:00:00 2001
+From c983b81a12e7804c4a81d5befa98065f77579ea3 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Mon, 13 Feb 2023 10:04:13 +0000
-Subject: Fixing push_dl_task and adding fallback to G-EDF
+Subject: [PATCH 27/30] Fixing push_dl_task and adding fallback to G-EDF
 
 ---
  kernel/sched/deadline.c | 57 +++++++++++++++++++++++++++++++++++++++++
@@ -79,5 +79,5 @@ index 62733dbb5eb2..e31445794d29 100644
  		 * Task must still be moved and it can be
  		 * moved to later_rq, so we do it now.
 -- 
-2.40.0
+2.41.0
 

@@ -1,7 +1,7 @@
-From 3fb1ea2bbad4564cf7006fab5d5313a3642bacab Mon Sep 17 00:00:00 2001
+From ee5d9169f5b7b4efac941503c806c7ef09ad8d39 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Mon, 13 Feb 2023 10:17:49 +0000
-Subject: Fix: do not enqueue a push where we cannot
+Subject: [PATCH 28/30] Fix: do not enqueue a push where we cannot
 
 ---
  kernel/sched/deadline.c | 6 +++---
@@ -25,5 +25,5 @@ index e31445794d29..196507e3b912 100644
  
  		if (!is_leftmost(curr, &rq->dl))
 -- 
-2.40.0
+2.41.0
 

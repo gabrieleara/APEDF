@@ -1,7 +1,8 @@
-From 2f6edd6c0bd4865df38200c93b4578231b4528fd Mon Sep 17 00:00:00 2001
+From 9ebee79eb3385cb6a56c42369805a318d27f049d Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Mon, 13 Feb 2023 10:37:03 +0000
-Subject: [PATCH 3/3] SCHEDUTIL: avoid using more frequency than necessary
+Subject: [PATCH 06/30] [PATCH 3/3] SCHEDUTIL: avoid using more frequency than
+ necessary
 
 ---
  include/linux/sched/cpufreq.h    | 2 +-
@@ -22,7 +23,7 @@ index cc6bcc1e96bc..b130973c47c5 100644
  #endif /* CONFIG_CPU_FREQ */
  
 diff --git a/kernel/sched/cpufreq_schedutil.c b/kernel/sched/cpufreq_schedutil.c
-index 22795460682c..8322c30f1769 100644
+index 829b301a5ded..2e48428fe2ba 100644
 --- a/kernel/sched/cpufreq_schedutil.c
 +++ b/kernel/sched/cpufreq_schedutil.c
 @@ -165,7 +165,7 @@ static void sugov_deferred_update(struct sugov_policy *sg_policy, u64 time,
@@ -35,5 +36,5 @@ index 22795460682c..8322c30f1769 100644
   * The lowest driver-supported frequency which is equal or greater than the raw
   * next_freq (as calculated above) is returned, subject to policy min/max and
 -- 
-2.40.0
+2.41.0
 

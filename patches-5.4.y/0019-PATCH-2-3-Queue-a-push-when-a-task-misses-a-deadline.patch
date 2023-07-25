@@ -1,7 +1,7 @@
-From ad54a2b24d97dcaf22d07f7fdb683418e24182cb Mon Sep 17 00:00:00 2001
+From 5297258da969cea1f719e3cad13aa393c725373c Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
 Date: Thu, 24 Nov 2022 12:04:21 +0100
-Subject: [PATCH 2/3] Queue a push when a task misses a deadline
+Subject: [PATCH 19/30] [PATCH 2/3] Queue a push when a task misses a deadline
 
 This probably means that the core is overloaded
 ---
@@ -27,5 +27,5 @@ index 255177dd0998..b95ca0f7148f 100644
  		if (!is_leftmost(curr, &rq->dl))
  			resched_curr(rq);
 -- 
-2.40.0
+2.41.0
 

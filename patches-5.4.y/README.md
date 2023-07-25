@@ -1,4 +1,9 @@
-# How to Apply the Patches
+# Adaptively Partitioned EDF for Linux
+
+This project contains the sources of the APEDF scheduler patch for the `SCHED_DEADLINE`
+Linux scheduling class.
+
+## How to Apply the Patches
 
 The patches in this directory apply to kernel version 5.4.y.
 The following is the description of the patches (by number):
@@ -11,8 +16,8 @@ The following is the description of the patches (by number):
    now considers that instead of the CPU capability) and to ignore all
    non-deadline tasks when calculating the utilization of the system;
  - 0008-0022: Original APEDF implementation by Luca Abeni;
- - 0023-0029: Joined effort by Luca Abeni and Gabriele Ara to achieve a working
-   version of APEDF.
+ - 0023-0030: Joined effort by Luca Abeni and Gabriele Ara to achieve a working
+   version of APEDF, both with FF and WF.
 
 To simplify referring to versions of the code, you can define the following
 tags:
@@ -33,5 +38,3 @@ you can use the following command:
 git tag -a apedf-global "$(git log --grep 'DEADLINE: Fix frequency scaling' --pretty=format:"%h")"
 ```
 
-> NOTE: the `XX-walter` directory contains some more patches from a different
-> version that is no longer in use, but may be useful in the future.

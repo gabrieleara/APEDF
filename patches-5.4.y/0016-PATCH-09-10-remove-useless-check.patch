@@ -1,7 +1,7 @@
-From 41c01057b1a33e801ee540952859014c8ac2c5b0 Mon Sep 17 00:00:00 2001
+From 36778a71db76198bd38cbefe1b1fe09755b92fad Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:19:17 +0000
-Subject: [PATCH 09/10] remove useless check
+Subject: [PATCH 16/30] [PATCH 09/10] remove useless check
 
 ---
  kernel/sched/deadline.c | 7 +------
@@ -26,5 +26,5 @@ index aec93747d6a3..1e9c4ed380fe 100644
  	}
  }
 -- 
-2.40.0
+2.41.0
 

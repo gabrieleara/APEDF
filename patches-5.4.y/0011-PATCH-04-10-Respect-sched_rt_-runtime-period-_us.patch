@@ -1,7 +1,7 @@
-From d4c2dee4f1ea21d5f25c0838d317b28ae11598a1 Mon Sep 17 00:00:00 2001
+From 3b761d6064b93568e6a2b1f2a42c70005ae66ca1 Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:13:35 +0000
-Subject: [PATCH 04/10] Respect sched_rt_{runtime,period}_us
+Subject: [PATCH 11/30] [PATCH 04/10] Respect sched_rt_{runtime,period}_us
 
 ---
  kernel/sched/deadline.c | 17 ++++++++++-------
@@ -104,5 +104,5 @@ index b8a3db59e326..ecc520b26a78 100644
  
  #ifdef CONFIG_FAIR_GROUP_SCHED
 -- 
-2.40.0
+2.41.0
 

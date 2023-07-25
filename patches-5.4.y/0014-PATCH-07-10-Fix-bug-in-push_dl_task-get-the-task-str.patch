@@ -1,8 +1,8 @@
-From 37e670fb37ee016c2240e8107ce12548d9e1c062 Mon Sep 17 00:00:00 2001
+From 93229deb286d739a90c2418015da1f4df3813116 Mon Sep 17 00:00:00 2001
 From: luca abeni <luca.abeni@santannapisa.it>
 Date: Thu, 18 Nov 2021 13:17:24 +0000
-Subject: [PATCH 07/10] Fix bug in push_dl_task: get the task structure when
- needed
+Subject: [PATCH 14/30] [PATCH 07/10] Fix bug in push_dl_task: get the task
+ structure when needed
 
 ---
  kernel/sched/deadline.c | 10 ++++------
@@ -36,5 +36,5 @@ index 91b6de51cb27..6fe4fdd854d7 100644
  		later_rq = find_lock_later_rq(next_task, rq);
  		if (!later_rq) {
 -- 
-2.40.0
+2.41.0
 

@@ -1,8 +1,8 @@
-From d749a5eab7c21da1af352c16a5c72732e88c0e25 Mon Sep 17 00:00:00 2001
+From 810ee88ae5c68e7e36a1dc7b0d852ce28a6c9b82 Mon Sep 17 00:00:00 2001
 From: Lukasz Luba <lukasz.luba@arm.com>
 Date: Wed, 19 Feb 2020 09:58:27 +0000
-Subject: [PATCH 1/2] ARM: dts: exynos: Add dynamic-power-coefficient to
- Exynos5422 CPUs
+Subject: [PATCH 01/30] [PATCH 1/2] ARM: dts: exynos: Add
+ dynamic-power-coefficient to Exynos5422 CPUs
 
 To use Energy Aware Scheduler (EAS) the Energy Model (EM) should be
 registered for CPUs. Add dynamic-power-coefficient into CPU nodes which
@@ -89,5 +89,5 @@ index aea3893fed24..9615e90358bc 100644
  	};
  };
 -- 
-2.40.0
+2.41.0
 
