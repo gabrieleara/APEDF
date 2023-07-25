@@ -6,6 +6,7 @@ import parse
 import sys
 
 import pandas as pd
+import numpy as np
 
 
 def eprint(*args, **kwargs):
@@ -118,7 +119,7 @@ def parse_task(task_logfile):
         # Assuming that there are zero migrations:
         'cpu',
         # Not really but sure
-        'freq',
+        # 'freq',
     ]
     task_info = {
         'filename': task_logfile,
@@ -179,6 +180,10 @@ def parse_task(task_logfile):
     task_placement = task_log[['cpu']]
     task_placement = task_placement.apply(mark_migrations)
     migrations = task_placement['cpu'].count()
+    migrations_ratio = migrations / count
+
+    # Frequency accounting
+    freq_timeseries = task_log[['start', 'freq']][1:]
 
     return {
         **task_info,
@@ -188,9 +193,20 @@ def parse_task(task_logfile):
         'minslack':     minslack,
         'maxslack':     maxslack,
         'migrations':   migrations,
+        'migrations_ratio': migrations_ratio,
         'tot_duration': tot_duration,
+        'freq': freq_timeseries # NOTE: THIS IS AN ARRAY of pairs!!!
     }
 
+def weighted_percentile(data, weights, perc):
+    """
+    perc : percentile in [0-1]!
+    """
+    ix = np.argsort(data)
+    data = data[ix] # sort data
+    weights = weights[ix] # sort weights
+    cdf = (np.cumsum(weights) - 0.5 * weights) / np.sum(weights) # 'like' a CDF function
+    return np.interp(perc, cdf, data)
 
 def parse_taskset(tset_dir):
     global tsets_type
@@ -223,16 +239,17 @@ def parse_taskset(tset_dir):
 
     tset_stats = {
         **tset_info,
-        'freq': 0,
         'count': 0,
         'misses': 0,
         'miss_ratio': 0,
         'minslack': float('inf'),
         'maxslack': -float('inf'),
-        'migrations':   0,
+        'migrations': 0,
+        'migrations_ratio': 0,
     }
 
     tasks_stats = []
+    freq_timeseries = []
 
     task_dirs = [d for d in os.listdir(tset_dir) if 'rt-app-task' in d]
     for tdir in task_dirs:
@@ -246,6 +263,10 @@ def parse_taskset(tset_dir):
             eprint(
                 f"WARN: {type(error).__name__}, skipping {os.path.join(tset_dir, tdir)} ...")
             continue
+
+        # List of timeseries
+        freq_timeseries.append(tstats['freq'])
+        tstats.pop('freq')
 
         tstats = {
             **tset_info,
@@ -261,12 +282,62 @@ def parse_taskset(tset_dir):
             tstats['minslack'], tset_stats['minslack'])
         tset_stats['maxslack'] = max(
             tstats['maxslack'], tset_stats['maxslack'])
-        # tset_stats['freq'] =
+        # tset_stats['freq_mean'] = freqs
 
     try:
         tset_stats['miss_ratio'] = tset_stats['misses'] / tset_stats['count']
+        tset_stats['migrations_ratio'] = tset_stats['migrations'] / tset_stats['count']
     except ZeroDivisionError:
         raise AllTasksSkipped
+
+    freq_timeseries = pd.concat(freq_timeseries, ignore_index=True)
+    freq_timeseries.sort_values(by=['start'], inplace=True)
+    freq_timeseries = freq_timeseries.reset_index(drop=True)
+
+    freqs = []
+    weights = []
+
+    t_prev = freq_timeseries['start'][0]
+    f_prev = freq_timeseries['freq'][0]
+    for index, row in freq_timeseries[1:].iterrows():
+        freqs += [f_prev]
+        t_next = row['start']
+        weights += [t_next - t_prev]
+        t_prev = t_next
+        f_prev = row['freq']
+
+    tot_weights = sum(weights)
+
+    the_freqs = [.2, .3, .4, .5, .6, .7, .8, .9, 1.0, 1.1, 1.2, 1.3, 1.4]
+    the_weights = [0,0,0,0,0,0,0,0,0,0,0,0,0]
+
+    for idx in range(len(the_freqs)):
+        for f, w in zip(freqs, weights):
+            if f == the_freqs[idx]:
+                the_weights[idx] += w
+
+    for i in range(len(the_freqs)):
+        if the_weights[i] > 0:
+            freq_min = the_freqs[i]
+            break
+
+    for i in reversed(range(len(the_freqs))):
+        if the_weights[i] > 0:
+            freq_max = the_freqs[i]
+            break
+
+    the_freqs = np.asarray(the_freqs)
+    the_weights = np.asarray(the_weights)
+
+    freq_q20 = weighted_percentile(the_freqs, the_weights, .20)
+    freq_q50 = weighted_percentile(the_freqs, the_weights, .50)
+    freq_mean = np.average(the_freqs, weights=the_weights)
+
+    tset_stats['freq_min'] = freq_min
+    tset_stats['freq_q20'] = freq_q20
+    tset_stats['freq_q50'] = freq_q50
+    tset_stats['freq_mean'] = freq_mean
+    tset_stats['freq_max'] = freq_max
 
     # 1. The stats of the whole taskset
     # 2. List of the stats of each task

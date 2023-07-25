@@ -9,7 +9,11 @@ main() {
 			./scripts/plot-multi.py -O "$FORMAT" -o "$odir_multi/$g"  \
 				"$1"/apedf/tasks-$g.csv \
 				"$1"/apedfwf/tasks-$g.csv \
-				"$1"/global/tasks-$g.csv
+				"$1"/global/tasks-$g.csv \
+				"$1"/apedf/tsets-$g.csv \
+				"$1"/apedfwf/tsets-$g.csv \
+				"$1"/global/tsets-$g.csv \
+				|| true
 		done
 
 		for s in global apedf apedfwf; do

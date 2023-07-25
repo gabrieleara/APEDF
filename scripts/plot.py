@@ -20,6 +20,10 @@ def dir_path(string):
 #-- dir_path
 
 
+def transparent_print(outfile):
+    return True if '.svg' in str(outfile) else False
+
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('tsets_in', type=argparse.FileType('r'))
@@ -31,7 +35,7 @@ def parse_args():
     return parser.parse_args()
 #-- parse_args
 
-def make_plot(data, outfile, absolute=True):
+def make_plot(data, outfile, absolute=True, migrations=False):
     if absolute:
         yfield='misses'
         ylabel='Number of Misses'
@@ -40,8 +44,20 @@ def make_plot(data, outfile, absolute=True):
     else:
         yfield='miss_ratio'
         ylabel='Deadline Miss Ratio'
-        ylim_top=1.1
+        ylim_top=.7
         ylim_bottom=-.1
+
+    if migrations:
+        if absolute:
+            yfield='migrations'
+            ylabel='Number of migrations'
+            ylim_top=None
+            ylim_bottom=-.1
+        else:
+            yfield='migrations_ratio'
+            ylabel='Migrations ratio'
+            ylim_top=1.0
+            ylim_bottom=-.1
 
     figure, axis = plt.subplots()
     for number, group in data.groupby('num_tasks'):
@@ -57,7 +73,7 @@ def make_plot(data, outfile, absolute=True):
     axis.set_ylim(top=ylim_top, bottom=ylim_bottom)
     axis.grid()
     axis.legend()
-    figure.savefig(outfile, transparent=True)
+    figure.savefig(outfile, transparent=transparent_print(outfile))
 
 # which: choose from 'mean', 'max', 'min'
 def make_plot_freq(data, outfile, performance=False, which='mean'):
@@ -69,8 +85,7 @@ def make_plot_freq(data, outfile, performance=False, which='mean'):
         freqs = []
         for idx, mdata in group.groupby(['util', 'tset_idx']):
                 mutil = mdata['util'].min() # There's only one value anyway
-                # Calling the method specified by which
-                mfreq = getattr(mdata['freq'], which)()
+                mfreq = mdata['freq_' + which].min() # There's only one value anyway
                 utils.append([mutil])
                 freqs.append([mfreq])
         axis.scatter(utils, freqs, label=f"{number:02d} tasks", alpha=.3)
@@ -83,7 +98,7 @@ def make_plot_freq(data, outfile, performance=False, which='mean'):
     axis.set_ylim(top=1.5, bottom=bottom)
     axis.grid()
     axis.legend()
-    figure.savefig(outfile, transparent=True)
+    figure.savefig(outfile, transparent=transparent_print(outfile))
 
 def main():
     args = parse_args()
@@ -93,14 +108,16 @@ def main():
     data = pd.read_csv(args.tsets_in, sep='\t', index_col=None)
     data.sort_values(by=['num_tasks', 'util', 'tset_idx'], inplace=True)
 
-    data_tasks = pd.read_csv(args.tasks_in, sep='\t', index_col=None)
-    data_tasks.sort_values(by=['num_tasks', 'util', 'tset_idx'], inplace=True)
+    # data_tasks = pd.read_csv(args.tasks_in, sep='\t', index_col=None)
+    # data_tasks.sort_values(by=['num_tasks', 'util', 'tset_idx'], inplace=True)
 
     make_plot(data, f"{args.out_file_base}.abs.{args.out_file_format}", absolute=True)
     make_plot(data, f"{args.out_file_base}.ratio.{args.out_file_format}", absolute=False)
-    make_plot_freq(data_tasks, f"{args.out_file_base}.freq.mean.{args.out_file_format}", performance=performance, which='mean')
-    make_plot_freq(data_tasks, f"{args.out_file_base}.freq.min.{args.out_file_format}", performance=performance, which='min')
-    make_plot_freq(data_tasks, f"{args.out_file_base}.freq.max.{args.out_file_format}", performance=performance, which='max')
+    make_plot(data, f"{args.out_file_base}.migr-abs.{args.out_file_format}", absolute=True, migrations=True)
+    make_plot(data, f"{args.out_file_base}.migr-ratio.{args.out_file_format}", absolute=False, migrations=True)
+    make_plot_freq(data, f"{args.out_file_base}.freq.mean.{args.out_file_format}", performance=performance, which='mean')
+    make_plot_freq(data, f"{args.out_file_base}.freq.min.{args.out_file_format}", performance=performance, which='min')
+    make_plot_freq(data, f"{args.out_file_base}.freq.max.{args.out_file_format}", performance=performance, which='max')
 
     # data_miss = data[data['miss_ratio'] > 0]
     # data_non_miss = data[data['miss_ratio'] == 0]

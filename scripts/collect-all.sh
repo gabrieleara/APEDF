@@ -3,7 +3,7 @@
 main() {
 	for s in global apedf apedfwf; do
 		for g in performance schedutil; do
-			if ! [ -d "$1/$s" ] ; then
+			if ! [ -d "$1/$s/$g" ] ; then
 				continue
 			fi
 

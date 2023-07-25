@@ -1,51 +1,51 @@
 {
   "tasks": {
     "task00": {
-      "run": 14000,
+      "run": 78000,
       "timer": {
         "period": 800000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 16000,
+      "dl-runtime": 80000,
       "dl-period": 800000,
       "delay": 500000
     },
     "task01": {
-      "run": 14000,
+      "run": 78000,
       "timer": {
         "period": 800000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 16000,
+      "dl-runtime": 80000,
       "dl-period": 800000,
       "delay": 500000
     },
     "task02": {
-      "run": 14000,
+      "run": 78000,
       "timer": {
         "period": 800000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 16000,
+      "dl-runtime": 80000,
       "dl-period": 800000,
       "delay": 500000
     },
     "task03": {
-      "run": 14000,
+      "run": 78000,
       "timer": {
         "period": 800000,
         "mode": "absolute",
         "ref": "unique"
       },
-      "dl-runtime": 16000,
+      "dl-runtime": 80000,
       "dl-period": 800000,
       "delay": 500000
     },
     "task04": {
-      "run": 727177,
+      "run": 763450,
       "timer": {
         "period": 810000,
         "mode": "absolute",
@@ -65,6 +65,7 @@
     "logdir": "/tmp/rt-app-logs",
     "log_basename": "rt-app",
     "log_size": "auto",
-    "gnuplot": false
+    "gnuplot": false,
+    "ftrace": "main,task,loop,event"
   }
 }
