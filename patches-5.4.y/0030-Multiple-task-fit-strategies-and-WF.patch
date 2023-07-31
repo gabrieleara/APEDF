@@ -1,26 +1,32 @@
-From 3537506367f4da55b15f4e36f17563737da598c5 Mon Sep 17 00:00:00 2001
+From d69ed8791bcab81baece3de31304dfdec14a7e38 Mon Sep 17 00:00:00 2001
 From: Gabriele Ara <gabriele.ara@santannapisa.it>
-Date: Wed, 12 Apr 2023 09:05:41 +0000
+Date: Mon, 31 Jul 2023 09:56:29 +0200
 Subject: [PATCH 30/30] Multiple task fit strategies and WF
 
+# Conflicts:
+#	Makefile
 ---
- Makefile                |  2 +-
+ Makefile                |  3 +--
  kernel/sched/deadline.c | 43 ++++++++++++++++++++++++++++++++++++-----
- 2 files changed, 39 insertions(+), 6 deletions(-)
+ 2 files changed, 39 insertions(+), 7 deletions(-)
 
 diff --git a/Makefile b/Makefile
-index 1d5ddac38173..580a8b16b641 100644
+index 211fc920ef15..b7d937030d51 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -2,7 +2,7 @@
+@@ -1,11 +1,10 @@
+ # SPDX-License-Identifier: GPL-2.0
  VERSION = 5
- PATCHLEVEL = 4
- SUBLEVEL = 236
--EXTRAVERSION =-apedf2
-+EXTRAVERSION =-apedf2wf
+-PATCHLEVEL = 4
+ SUBLEVEL = 249
+ EXTRAVERSION =
  NAME = Kleptomaniac Octopus
  
+-EXTRAVERSION = -apedf2
++EXTRAVERSION = -apedf2wf
+ 
  # *DOCUMENTATION*
+ # To see a list of typical targets execute "make help"
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
 index 627e3bd4f715..1139202c3719 100644
 --- a/kernel/sched/deadline.c

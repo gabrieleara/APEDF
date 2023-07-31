@@ -1,4 +1,4 @@
-From efe74c9f4a3a17e0e36e2c1ae7cea121254a8c86 Mon Sep 17 00:00:00 2001
+From f34a27f7b3a50cdf0e4ccb7a4af9e91b5f8f6eb6 Mon Sep 17 00:00:00 2001
 From: Lukasz Luba <lukasz.luba@arm.com>
 Date: Wed, 19 Feb 2020 09:58:28 +0000
 Subject: [PATCH 02/30] [PATCH 2/2] ARM: exynos_defconfig: Enable SCHED_MC and

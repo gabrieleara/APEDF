@@ -1,4 +1,4 @@
-From 810ee88ae5c68e7e36a1dc7b0d852ce28a6c9b82 Mon Sep 17 00:00:00 2001
+From ff3940fd191e9cda84d10a01507662155ea96b0c Mon Sep 17 00:00:00 2001
 From: Lukasz Luba <lukasz.luba@arm.com>
 Date: Wed, 19 Feb 2020 09:58:27 +0000
 Subject: [PATCH 01/30] [PATCH 1/2] ARM: dts: exynos: Add

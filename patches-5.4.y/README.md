@@ -22,9 +22,9 @@ The following is the description of the patches (by number):
 To simplify referring to versions of the code, you can define the following
 tags:
  - `apedf-base`: shall point to the commit immediately preceding 0001;
- - `apedf-global`: shall point to the commit defined in 0006;
- - `apedf-devel`: shall point to the last commit (can also be the branch all of
-   these commit are applied on top).
+ - `apedf-global`: shall point to the commit defined in 0007;
+ - `apedf-ff`: shall point to the commit defined in 0029;
+ - `apedf-wf`: shall point to the commit defined in 0030.
 
 To apply the patches simply use
 ```bash
@@ -37,4 +37,3 @@ you can use the following command:
 ```bash
 git tag -a apedf-global "$(git log --grep 'DEADLINE: Fix frequency scaling' --pretty=format:"%h")"
 ```
-
