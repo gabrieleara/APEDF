@@ -40,14 +40,18 @@ function main() {
 
 	PLACEMENT=global
 	if uname -a | grep apedf >/dev/null 2>&1 ; then
-		PLACEMENT=apedf
+		if uname -a | grep wf >/dev/null 2>&1 ; then
+			PLACEMENT=apedf-wf
+		else
+			PLACEMENT=apedf-ff
+		fi
 	fi
 
 	cd "$APEDF_DIR"
 
 	OUTDIR=out/$PLACEMENT
 
-	for ntasks in 06 08 12 16; do
+	for ntasks in 16 12 08 06 ; do
 		run_ntasks_with_governor "$ntasks" "$OUTDIR" performance
 		run_ntasks_with_governor "$ntasks" "$OUTDIR" schedutil
 	done
