@@ -9,6 +9,12 @@ import subprocess
 import sys
 import time
 
+APEDF_PATH="/root/APEDF"
+BOARD_USER="root"
+BOARD_IP="10.30.3.51"
+RELAY_IP = "10.30.3.203"
+RELAY_NAME = "Zarquon"
+
 # ---------------------------------- EPRINT ---------------------------------- #
 
 RESET = colored.attr('reset')
@@ -85,13 +91,13 @@ def to_hours(s):
 
 
 def relay_check_name():
-    url = "http://10.30.3.203/settings"
+    url = f"http://{RELAY_IP}/settings"
     res = requests.get(url=url)
     if not res.ok:
         return False
     try:
         data = res.json()
-        if data['name'] == 'Zarquon':
+        if data['name'] == RELAY_NAME:
             return True
     except:
         pass
@@ -99,7 +105,7 @@ def relay_check_name():
 
 
 def relay_switch(turn: str = 'NO'):
-    url = "http://10.30.3.203/relay/0"
+    url = f"http://{RELAY_IP}/relay/0"
     params = {}
 
     if turn != 'NO':
@@ -160,8 +166,8 @@ def sub_cmd(*args):
     return child_process.returncode, outs, errs
 
 def ssh_cmd(*args):
-    user = 'root'
-    host = 'zarquon'
+    user = BOARD_USER
+    host = BOARD_IP
     retcode, outs, errs = sub_cmd("ssh", f"{user}@{host}", "-o", "ConnectTimeout=1", *args)
     return retcode, outs, errs
 
@@ -169,7 +175,7 @@ def parse_progress(outs):
     return outs.strip()
 
 def ping_check():
-    retcode, outs, errs = sub_cmd("ping -c1 10.30.3.51")
+    retcode, outs, errs = sub_cmd(f"ping -c1 {BOARD_IP}")
     if retcode != 0:
         msg = f'Could not ping! {errs}'.strip()
         eprint.error("FAILURE!")
@@ -186,7 +192,7 @@ def experiment_check_running():
     progress = None
     if not ping_check():
         return False, progress
-    errcode, outs, errs = ssh_cmd("/root/APEDF/scripts/check_progress.sh")
+    errcode, outs, errs = ssh_cmd(f"{APEDF_PATH}/scripts/check_progress.sh")
     if errcode != 0:
         eprint.error("FAILURE!")
         eprint.error(errs)
@@ -200,7 +206,7 @@ def experiment_check_running():
 
 def experiment_attempt_start():
     eprint.plain(f"Attempting to start experiment...", end=" ")
-    errcode, outs, errs = ssh_cmd("/root/APEDF/scripts/start_experiment.sh")
+    errcode, outs, errs = ssh_cmd(f"{APEDF_PATH}/scripts/start_experiment.sh")
     if errcode != 0:
         eprint.error("FAILURE!")
         eprint.error(errs)
