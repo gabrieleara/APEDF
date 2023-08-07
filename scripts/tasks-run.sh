@@ -353,7 +353,7 @@ function main() {
 		fi
 
 		# Clean stuff from previous execution
-		rm -f "/tmp/rt-app-logs/*"
+		rm -f /tmp/rt-app-logs/*
 
 		# Power sampler
 		# nice -n -20 "$SAMPLER_APP" >"$POWER_FILE" 2>/dev/null &
@@ -394,7 +394,7 @@ function main() {
 		echo 1 >/proc/sys/vm/drop_caches
 
 		# Clean stuff from previous execution
-		rm -f "/tmp/rt-app-logs/*"
+		rm -f /tmp/rt-app-logs/*
 
 		# Wait for a while just in case board is heating up
 		sleep "$COOLDOWN"
