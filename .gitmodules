@@ -1,3 +1,6 @@
 [submodule "apps/rt-app"]
-	path = apps/rt-app
+	path = test/apps/rt-app
 	url = git@github.com:gabrieleara/rt-app.git
+[submodule "apps/power-sampler"]
+	path = test/apps/power-sampler
+	url = https://github.com/gabrieleara/power-sampler
