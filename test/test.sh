@@ -1,9 +1,8 @@
 #!/bin/bash
 
 # TODO:
-# - implement check for progress
-# - implement rescue-ssh mode support
-# - implement kernel swap support# - implement a maximum timeout for the cooldown
+# - implement kernel swap support
+# - implement a maximum timeout for the cooldown
 
 # --------------------------- TEST PARAMETERS --------------------------- #
 
@@ -244,10 +243,10 @@ function power_monitor_stop() {
 
 	# Sometimes, the processes are already over and we need to kill the
 	# hanging echo
-	kill $echopid 2>/dev/null || true
+	kill -9 $echopid >/dev/null 2>/dev/null || true
 
 	# Wait for the echo to terminate, just in case
-	wait
+	wait >/dev/null 2>/dev/null || true
 }
 
 # --------------------------- MANAGE CGROUPS ---------------------------- #
@@ -275,6 +274,10 @@ function cgroupv2_remove() {
 	rmdir "/sys/fs/cgroup/$1"
 }
 
+function cgroupv2_exists() {
+	test -d "/sys/fs/cgroup/$1"
+}
+
 # Arguments:
 # - name of cpuset to run into
 # - command to run on said cpuset, started in a separate shell
@@ -297,6 +300,10 @@ function cgroupv2_create_all() {
 		cg_name="${cg_array[0]}"
 		cg_cpus="${cg_array[1]}"
 		cg_partition="${cg_array[2]}"
+
+		if cgroupv2_exists "$cg_name"; then
+			cgroupv2_remove "$cg_name"
+		fi
 
 		cgroupv2_create "$cg_name"
 		cgroupv2_cpuset "$cg_name" "$cg_cpus"
@@ -413,11 +420,15 @@ function get_list() {
 function experiment_is_running() {
 	# Experiments run in screens, so check if there is any screen
 	# running called 'experiment'
-	if screen -ls | cut -d. -f2 | tail -n +2 | cut -d$'\t' -f |
+	if screen -ls | cut -d. -f2 | tail -n +2 | cut -d$'\t' -f1 |
 		grep -q experiment; then
 		return 0
 	fi
 	return 1
+}
+
+function trim() {
+	xargs
 }
 
 # Progress is expressed by a log file called last_experiment.log. The
@@ -427,9 +438,49 @@ function experiment_is_running() {
 # - Something went wrong: tests finished because of error
 # - [NN/MM]: current experiment progress
 function experiment_check_progress() {
-	# printf " + All tests successful!!\n"
-	echo "TODO"
-	return 1
+	local running=0
+	local tmpfile
+	tmpfile=$(mktemp)
+
+	if experiment_is_running; then
+		running=1
+	fi
+
+	# Read progress file in reverse
+	tac "last_experiment.log" | head >"$tmpfile"
+
+	# Get first non-blank line
+	local line
+	while read -r line; do
+		line=$(echo "$line" | trim)
+		if [ -n "$line" ] &&
+			! (echo "$line" | grep -q 'command not found') &&
+			! (echo "$line" | grep -q "Cleaning up"); then
+			break
+		fi
+	done <"$tmpfile"
+	if [ -z "$line" ]; then
+		echo 'Empty LOG file??' >&2
+		return 1
+	fi
+
+	# If this line is shown, it's over
+	if echo "$line" | grep -q 'All tests successful'; then
+		echo 'END'
+		return 0
+	fi
+
+	# If no process was found before, raise error
+	if [ $running = 0 ]; then
+		echo 'No process running' >&2
+		return 1
+	fi
+
+	# Extract progress
+	local progress
+	progress="$(echo "$line" | grep -E -o '\[[0-9]+/[0-9]+\]')"
+	echo "$progress"
+	return 0
 }
 
 function experiment_start() {
@@ -501,7 +552,13 @@ function experiment_execute_taskset() {
 }
 
 function kernel_change() {
-	echo "TODO!!!"
+	echo "TODO: kernel_change!!!"
+	return 1
+}
+
+function print_progress() {
+	printf "+ [%0${print_width}d/%d] %s %s %s:" \
+		"$cur_total_index" "$N_RUNS" "$scheduler" "$governor" "$taskset"
 }
 
 function experiment_run_step() {
@@ -509,7 +566,7 @@ function experiment_run_step() {
 	taskset_fname="${taskset}.json"
 	file_in=$(find "${TASKSETS_LOCATION}" -type f -name "$taskset_fname" -print -quit || true)
 
-	printf '%s: ' "$taskset"
+	print_progress
 
 	if [ -z "$file_in" ]; then
 		printf 'No input file, skipping...'
@@ -548,10 +605,6 @@ function experiment_run_step() {
 	experiment_execute_taskset
 }
 
-function print_progress() {
-	printf "+ [%0${print_width}d/%d] " "$cur_total_index" "$N_RUNS"
-}
-
 function experiment_run() {
 	setup
 	tasksets_fill_data
@@ -567,7 +620,6 @@ function experiment_run() {
 				for ntask in "${NTASKS[@]}"; do
 					for utilization in "${UTILIZATIONS[@]}"; do
 						cur_total_index=$((cur_total_index + 1))
-						print_progress
 						experiment_run_step
 						printf '\n'
 					done
@@ -585,7 +637,7 @@ function cleanup() {
 	last_result=$?
 	trap - EXIT
 
-	echo "Cleaning up..." >&2
+	printf "Cleaning up..." >&2
 
 	therm_monitor_stop || true
 	power_monitor_stop || true
@@ -613,14 +665,20 @@ function setup_cleanup() {
 	trap 'cleanup INT' INT
 }
 
+function isolate_rescue_ssh() {
+	# Hangs after a while, but always succeeds in my experience, so we
+	# put a timeout of 10 seconds, just in case
+	timeout 10 systemctl isolate rescue-ssh || true
+}
+
 function setup() {
 	setup_cleanup
 	TMPDIR=$(mktemp -d)
 	THERM_MONITOR_OUT="$TMPDIR/therm.log"
 	minicom_setup
 	cgroupv2_create_all
-
-	sysctl -w kernel.sched_rt_runtime_us="$RTLIMIT"
+	sysctl -w kernel.sched_rt_runtime_us="$RTLIMIT" >/dev/null
+	isolate_rescue_ssh
 }
 
 function main() {
