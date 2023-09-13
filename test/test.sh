@@ -1,15 +1,51 @@
 #!/bin/bash
 
-# -------------------- TEMPERATURE CHECK AND MONITOR -------------------- #
+# TODO:
+# - implement check for progress
+# - implement rescue-ssh mode support
+# - implement kernel swap support# - implement a maximum timeout for the cooldown
+
+# --------------------------- TEST PARAMETERS --------------------------- #
 
 # Used to discard and repeat an experiment
 THERM_DISCARD=75
 
 # Used to delay the beginning of the next experiment
-THERM_CONTINUE=40
+THERM_CONTINUE=45
 
-# How often the temperature must be checked during experiments
-THERM_MONITOR_INTERVAL=.5s
+# How often in seconds the temperature must be checked during experiments
+THERM_MONITOR_INTERVAL=.5
+
+# Cgroups that should be created by the script during experiment setup
+CGROUPS=(
+	# Default cgroup cpuset will shrink automatically when setting the
+	# other cpus to the 'big' group.
+	"big 4-7 root"
+)
+
+# Cgroup in which rt-app shall execute
+CGROUP_TASKSETS=big
+
+# Must be a CPU associated with any cpu inside the selected cgroup
+CPUFREQ_CPU=4
+
+# Maximum frequency that can be used on the island associated to the
+# selected cgroup
+CPUFREQ_MAXFREQ="1400000" # in khz
+
+# Where the output is saved (relative to test directory location)
+OUTDIR=./out
+
+# For how long rt-app will execute
+RTAPP_TIMEOUT=60
+
+# Log-level for rt-app (10 = none)
+RTAPP_LOGLEVEL=10
+
+# What to set as rt-limit for the system (-1 disable rt throttling)
+RTLIMIT=-1
+
+# -------------------- TEMPERATURE CHECK AND MONITOR -------------------- #
 
 function therm_files() {
 	ls -1 /sys/class/thermal/thermal_zone*/temp
@@ -103,8 +139,8 @@ PM_MINICOM_FIFO_OUT=''
 function minicom_killer() {
 	(
 		# Wait for any input character or STDIN termination
-		read || true
-		# Output the sequence Alt+X, CR to STDOUT
+		read -r || true
+		# Output the sequence Alt+x, CR to STDOUT
 		echo -ne "\x01x\r"
 	)
 }
@@ -216,14 +252,6 @@ function power_monitor_stop() {
 
 # --------------------------- MANAGE CGROUPS ---------------------------- #
 
-CGROUPS=(
-	# Default cgroup cpuset will shrink automatically when setting the
-	# other cpus to the 'big' group.
-	"big 4-7 root"
-)
-
-CGROUP_TASKSETS=big
-
 function cgroupv2_init() {
 	# cgroups created without the cpuset parameter in the root cgroup
 	# will NOT be able to enable the cpuset controller later
@@ -296,9 +324,6 @@ function scheduler_detect {
 }
 
 # ------------------------- GOVERNOR MANAGEMENT ------------------------- #
-
-CPUFREQ_CPU=4
-CPUFREQ_MAXFREQ="1400000" # in khz
 
 CPUFREQ_DIR="/sys/devices/system/cpu/cpu${CPUFREQ_CPU}/cpufreq"
 
@@ -413,18 +438,12 @@ function experiment_start() {
 		return 1
 	fi
 
-	# Run self with the run argument instead of the start argument
+	# Re-run self with the "run" command instead of "start"
 	screen -L -Logfile last_experiment.log \
 		-S experiment \
 		-d -m \
 		"$SCRIPT_PATH" run
 }
-
-OUTDIR=./out
-
-RTAPP_TIMEOUT=60
-RTAPP_LOGLEVEL=10
-RTLIMIT=-1
 
 function experiment_execute_taskset() {
 	# Relevant variables:
@@ -529,7 +548,7 @@ function experiment_run_step() {
 	experiment_execute_taskset
 }
 
-function print_status() {
+function print_progress() {
 	printf "+ [%0${print_width}d/%d] " "$cur_total_index" "$N_RUNS"
 }
 
@@ -543,12 +562,12 @@ function experiment_run() {
 
 	cur_total_index=0
 	for index in "${INDEXES[@]}"; do
-		for scheduler in "${SCHEDULERS[@]}"; do
-			for governor in "${GOVERNORS[@]}"; do
+		for governor in "${GOVERNORS[@]}"; do
+			for scheduler in "${SCHEDULERS[@]}"; do
 				for ntask in "${NTASKS[@]}"; do
 					for utilization in "${UTILIZATIONS[@]}"; do
 						cur_total_index=$((cur_total_index + 1))
-						print_status
+						print_progress
 						experiment_run_step
 						printf '\n'
 					done
@@ -610,15 +629,14 @@ function main() {
 	SCRIPT_DIR="$(realpath "$(dirname "$SCRIPT_PATH")")"
 
 	PROJ_PATH="$(realpath "$SCRIPT_DIR"/..)"
-	APPS_PATH="$PROJ_PATH/apps"
+	TEST_PATH="$(realpath "$PROJ_PATH"/test)"
+	APPS_PATH="$PROJ_PATH/test/apps"
 	RTAPP="$APPS_PATH/rt-app/src/rt-app"
 
-	cd "$(realpath "$(dirname "$SCRIPT_PATH")")"
+	# Move to the correct directory
+	cd "$TEST_PATH"
 
 	case "$1" in
-	get_list)
-		get_list
-		;;
 	check_progress)
 		experiment_check_progress
 		;;
@@ -629,24 +647,12 @@ function main() {
 		experiment_run
 		;;
 	*)
-		"$@"
+		echo "Unsupported command: $1" >&2
+		echo "Supported commands: start, check_progress." >&2
+		echo "Commands accepted for internal use only: run." >&2
+		return 1
 		;;
-	# *)
-	# 	echo "Unsupported command: $1" >&2
-	# 	return 1
-	# 	;;
 	esac
-
-	:
-	# Both monitors work now, to use the power monitor:
-	# - power_monitor_start
-	# - power_monitor_stop
-	# - copy content of "$POWER_MONITOR_OUT" file
-	#
-	# To use the thermal monitor
-	# - therm_monitor_start
-	# - therm_monitor_stop
-	# - copy content of "$THERM_MONITOR_OUT" file
 }
 
 (
