@@ -1,13 +1,12 @@
 #!/bin/bash
 
 # TODO:
-# - implement kernel swap support
 # - implement a maximum timeout for the cooldown
 
 # --------------------------- TEST PARAMETERS --------------------------- #
 
 # Used to discard and repeat an experiment
-THERM_DISCARD=75
+THERM_DISCARD=70
 
 # Used to delay the beginning of the next experiment
 THERM_CONTINUE=45
@@ -318,7 +317,7 @@ function scheduler_detect {
 	kernel=$(uname -r)
 
 	case "$kernel" in
-	*apedf*-wf*)
+	*apedf*wf*)
 		echo apedf-wf
 		;;
 	*apedf*)
@@ -436,6 +435,7 @@ function trim() {
 # not the full line):
 # - All tests successful: you are finished
 # - Something went wrong: tests finished because of error
+# - Swapping kernel: tests must be resumed after a reboot
 # - [NN/MM]: current experiment progress
 function experiment_check_progress() {
 	local running=0
@@ -522,25 +522,26 @@ function experiment_execute_taskset() {
 	echo >/sys/kernel/tracing/trace
 
 	power_monitor_start
-	thermal_monitor_start
+	therm_monitor_start
 
 	# Run rtapp in the right cgroup
 	cgroupv2_run "$CGROUP_TASKSETS" nice -n 20 \
 		"$RTAPP" -t "$RTAPP_TIMEOUT" -l "$RTAPP_LOGLEVEL" "$file_in"
 
 	power_monitor_stop
-	thermal_monitor_stop
+	therm_monitor_stop
 
 	# Copy back trace buffer
-	cat /sys/kernel/tracing/trace >"$dir_out"/kernel.trace
+	cat /sys/kernel/tracing/trace >/tmp/kernel.trace
 	echo 0 >/sys/kernel/tracing/tracing_on
 
 	sleep 2s
 
 	# Copy back results
-	cp -a "/tmp/rt-app-logs/*" "$dir_out"
+	cp -a /tmp/rt-app-logs/* "$dir_out"
 	cp -a "$POWER_MONITOR_OUT" "$dir_out"
 	cp -a "$THERM_MONITOR_OUT" "$dir_out"
+	cp -a /tmp/kernel.trace "$dir_out"
 
 	sync
 	echo 1 >/proc/sys/vm/drop_caches
@@ -552,8 +553,8 @@ function experiment_execute_taskset() {
 }
 
 function kernel_change() {
-	echo "TODO: kernel_change!!!"
-	return 1
+	# The required kernel is expressed by the $scheduler variable
+	cp ./kernels/$scheduler.zImage /media/boot/zImage
 }
 
 function print_progress() {
@@ -581,14 +582,16 @@ function experiment_run_step() {
 	fi
 
 	if [ -n "$(ls -A "$dir_out" 2>/dev/null)" ]; then
-		printf ' Nonempty directory exists, skipping...'
+		printf 'Nonempty directory exists, skipping...'
 		return 0
 	fi
 
 	# Directory is empty, we must run the experiment
 	if [ "$(scheduler_detect)" != "$scheduler" ]; then
 		# We must change kernel
+		printf '%s\n' 'Swapping kernel!'
 		kernel_change
+		sleep 5
 		sync
 		reboot
 	fi
