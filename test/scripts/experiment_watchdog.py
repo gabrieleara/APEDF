@@ -189,10 +189,10 @@ def ping_check():
 
 def experiment_check_running():
     eprint.plain(f'Check in progress...', end=' ')
-    progress = None
     if not ping_check():
-        return False, progress
-    errcode, outs, errs = ssh_cmd(f"{APEDF_PATH}/scripts/check_progress.sh")
+        return False, None
+    progress = None
+    errcode, outs, errs = ssh_cmd(f"{APEDF_PATH}/test/test.sh", "check_progress")
     if errcode != 0:
         eprint.error("FAILURE!")
         eprint.error(errs)
@@ -206,7 +206,7 @@ def experiment_check_running():
 
 def experiment_attempt_start():
     eprint.plain(f"Attempting to start experiment...", end=" ")
-    errcode, outs, errs = ssh_cmd(f"{APEDF_PATH}/scripts/start_experiment.sh")
+    errcode, outs, errs = ssh_cmd(f"{APEDF_PATH}/test/test.sh", "start")
     if errcode != 0:
         eprint.error("FAILURE!")
         eprint.error(errs)
@@ -276,9 +276,18 @@ def notify_fatal_error(ex):
 # ------------------------------ WATCHDOG CODE ------------------------------- #
 
 def main():
+    # TODO: toggle to enable/disable relay stuff
+    relay=False
+
+    started = False
+    finished = False
+    progress = ''
+    time_last_successful_check=0
+
     try:
         # Turn on the board
-        relay_switch('on')
+        if relay:
+            relay_switch('on')
 
         # Start the experiment
         experiment_start()
@@ -302,6 +311,18 @@ def main():
         # Forever
         while not finished:
             status, progress = experiment_check_running()
+
+            # Possible states:
+            # - False, 'RESTART': a reboot occurred, attempt to restart the script
+            # - False, None: network connectivity error, try again
+            # - False, '???': other error, try again later
+            # - True, '[XXX/YYY]': everything ok
+            # - True, 'END': experiment is over, get out
+
+
+            if not status and progress == 'RESTART':
+                return main() # Restart from the beginning
+
             if status:
                 if progress == 'END':
                     finished = True
@@ -333,10 +354,13 @@ def main():
 
             # Twenty minutes without a successful check, time to halt everything
             # and reboot! Then sleep for a while, it will likely not break soon.
-            relay_reboot()
-            experiment_start()
-            time.sleep(minutes(20))
-            time_last_successful_check = time.time()
+            if relay:
+                relay_reboot()
+                experiment_start()
+                time.sleep(minutes(20))
+                time_last_successful_check = time.time()
+            else:
+                raise ExperimentError("Board is unresponsive from a lot of time!")
 
     except (RelayError, ExperimentError) as ex:
         notify_fatal_error(ex)

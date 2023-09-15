@@ -470,6 +470,12 @@ function experiment_check_progress() {
 		return 0
 	fi
 
+	# If this line is shown, we have to restart the script
+	if echo "$line" | grep -q 'Swapping kernel'; then
+		echo 'RESTART'
+		return 1
+	fi
+
 	# If no process was found before, raise error
 	if [ $running = 0 ]; then
 		echo 'No process running' >&2
@@ -495,6 +501,12 @@ function experiment_start() {
 		-d -m \
 		"$SCRIPT_PATH" run
 }
+
+# function experiment_start_if_rebooted() {
+# 	if [ "$(experiment_check_progress || true)" = RESTART ] ; then
+# 		experiment_start
+# 	fi
+# }
 
 function experiment_execute_taskset() {
 	# Relevant variables:
@@ -704,6 +716,9 @@ function main() {
 	start)
 		experiment_start
 		;;
+	# start_if_rebooted)
+	# 	experiment_start_if_rebooted
+	# 	;;
 	run)
 		experiment_run
 		;;
