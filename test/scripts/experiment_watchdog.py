@@ -19,6 +19,9 @@ RELAY_NAME = "Zarquon"
 
 RESET = colored.attr('reset')
 
+# FIXME: get from environment again
+TELEGRAM_CHATID='22176758'
+TELEGRAM_BOT_TOKEN='1889907059:AAGn-Wpo0ZDfcDxpuuVch_Iqq41KvAEMYSE'
 
 class MsgClass(enum.Enum):
     PLAIN = enum.auto()
@@ -228,16 +231,13 @@ def experiment_start():
 # ---------------------------- NOTIFICATION CODE ----------------------------- #
 
 def notify_send(msg):
-    CHATID = os.getenv('TELEGRAM_ARARAUNA_CHATID')
-    TOKEN = os.getenv('TELEGRAM_ARARAUNA_NOTIFIER_BOT_TOKEN')
-
-    if CHATID is None or TOKEN is None:
+    if TELEGRAM_CHATID is None or TELEGRAM_BOT_TOKEN is None:
         return
 
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     params = {
         # parse_mode : '',
-        'chat_id': CHATID,
+        'chat_id': TELEGRAM_CHATID,
         'text': msg,
     }
 
@@ -275,92 +275,52 @@ def notify_fatal_error(ex):
 
 # ------------------------------ WATCHDOG CODE ------------------------------- #
 
+def check_and_restart():
+    # Possible states:
+    # - False, 'RESTART': a reboot occurred, attempt to restart the script
+    # - False, None: network connectivity error, try again
+    # - False, '???': other error, try again later
+    # - True, '[XXX/YYY]': everything ok
+    # - True, 'END': experiment is over, get out
+
+    maxcount=0
+    time_start=time.time()
+    status_ok=False
+    while True:
+        status_ok, progress = experiment_check_running()
+        if status_ok:
+            return progress
+
+        if maxcount > 6 or time.time() - time_start > minutes(20):
+            raise ExperimentError('Could not restart for a while!!')
+
+        experiment_attempt_start()
+        time.sleep(minutes(2))
+        maxcount=maxcount+1
+
 def main():
     # TODO: toggle to enable/disable relay stuff
     relay=False
 
-    started = False
-    finished = False
     progress = ''
-    time_last_successful_check=0
+    time_last_notification=0
 
     try:
         # Turn on the board
         if relay:
             relay_switch('on')
 
-        # Start the experiment
-        experiment_start()
+        while True:
+            progress = check_and_restart()
 
-        time.sleep(seconds(20))
-        started, progress = experiment_check_running()
+            if progress == 'END':
+                break
 
-        if not started:
-            raise ExperimentError('Could not start experiment for the first time!')
-
-        if progress == 'END':
-            # Do nothing and exit
-            finished = True
-        else:
-            # At the beginning wait for a little longer, it will likely not break
-            # right after being started!
-            finished = False
-            time.sleep(minutes(20))
-            time_last_successful_check = time.time()
-
-        # Forever
-        while not finished:
-            status, progress = experiment_check_running()
-
-            # Possible states:
-            # - False, 'RESTART': a reboot occurred, attempt to restart the script
-            # - False, None: network connectivity error, try again
-            # - False, '???': other error, try again later
-            # - True, '[XXX/YYY]': everything ok
-            # - True, 'END': experiment is over, get out
-
-
-            if not status and progress == 'RESTART':
-                return main() # Restart from the beginning
-
-            if status:
-                if progress == 'END':
-                    finished = True
-                    continue
-
-                # On success try again in 10 minutes
+            if time.time() - time_last_notification > minutes(10):
                 notify_progress(progress)
-                time.sleep(minutes(10))
-                time_last_successful_check = time.time()
-                continue
+                time_last_notification = time.time()
 
-            # On failure, do not panic yet! Try again, but progressively sooner
-            elapsed = time.time() - time_last_successful_check
-            eprint.plain(
-                f'Minutes since last successful check: {to_minutes(elapsed)}')
-            if elapsed < minutes(5):
-                time.sleep(minutes(4))
-                continue
-
-            if elapsed < minutes(7):
-                time.sleep(minutes(1))
-                continue
-
-            if elapsed < minutes(10):
-                time.sleep(seconds(30))
-                continue
-
-            notify_experiment_error()
-
-            # Twenty minutes without a successful check, time to halt everything
-            # and reboot! Then sleep for a while, it will likely not break soon.
-            if relay:
-                relay_reboot()
-                experiment_start()
-                time.sleep(minutes(20))
-                time_last_successful_check = time.time()
-            else:
-                raise ExperimentError("Board is unresponsive from a lot of time!")
+            time.sleep(minutes(1))
 
     except (RelayError, ExperimentError) as ex:
         notify_fatal_error(ex)
