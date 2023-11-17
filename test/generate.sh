@@ -1,9 +1,5 @@
 #!/bin/bash
 
-function get_script_path() {
-    echo "$(realpath "$(dirname "$(realpath "${BASH_SOURCE[0]}")")")"
-}
-
 # ======================================================== #
 # ---------------------- FUNCTIONS ----------------------- #
 # ======================================================== #
@@ -165,7 +161,7 @@ function generate_taskset() {
     #   integer
     # - -f output format as a python template string.
 
-    "$SDIR/util/taskgen3.py" \
+    "$TASKGEN3" \
         -S "$seed" \
         -d logunif \
         -s 1 \
@@ -306,7 +302,12 @@ function check_utilization() {
     # ----------------------- MAIN ----------------------- #
     # ==================================================== #
 
-    SDIR="$(get_script_path)"
+    SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
+    SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
+    SCRIPT_DIR="$(realpath "$(dirname "$SCRIPT_PATH")")"
+
+    TASKGEN3="$(realpath "$SCRIPT_DIR"/scripts/generation/taskgen3.py)"
+    TASKSET2JSON="$(realpath "$SCRIPT_DIR"/scripts/generation/taskset2json.py)"
 
     if [ $# -gt 0 ]; then
         echo "WARNING: using the first parameter as a fixed configuration script!" >&2
@@ -344,6 +345,10 @@ function check_utilization() {
     for ((k = 0; k < $GT_NUM_TASKS_NUM; k++)); do
         num_tasks="${GT_NUM_TASKS_LIST[$k]}"
 
+        printf -v num_tasks_dd "%02d" "$num_tasks"
+        curdir="$GT_OUT_DIR/$num_tasks_dd"
+        mkdir -p "$curdir"
+
         # for each utilization
         for ((j = 0; j < "$GT_UTILS_NUM"; j++)); do
             util="${GT_UTILS_LIST[$j]}"
@@ -368,9 +373,9 @@ function check_utilization() {
 
                     # Printing to variable tset_file
                     printf -v tset_name \
-                        'ts_n%02d_i%02d_u%.4f' "$num_tasks" "$i" "$util"
+                        'ts_n%s_i%02d_u%.4f' "$num_tasks_dd" "$i" "$util"
 
-                    tset_file="${GT_OUT_DIR}/${tset_name}"
+                    tset_file="${curdir}/${tset_name}"
                     text_file="${tset_file}.txt"
                     json_file="${tset_file}.json"
 
@@ -396,7 +401,7 @@ function check_utilization() {
                 # # NOTE: this could be necessary if the tasks exceed the maximum
                 # check_utilization "$text_file" "$util"
 
-                "$SDIR/util/taskset2json.py" \
+                "$TASKSET2JSON" \
                     -r "$GT_RT_FRACTION" \
                     -R "$GT_RT_REMOVE" \
                     -m "$GT_RT_MIN_DURATION" \

@@ -29,8 +29,8 @@ function main() {
 	SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
 	SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 	SCRIPT_DIR="$(realpath "$(dirname "$SCRIPT_PATH")")"
-	COLLECT_PY=$(realpath "$SCRIPT_DIR/scripts/collection/collect.py")
 
+	COLLECT_PY=$(realpath "$SCRIPT_DIR/scripts/collection/collect.py")
 	SCHEDULERS=(global apedf-ff apedf-wf)
 	GOVERNORS=(performance schedutil)
 
