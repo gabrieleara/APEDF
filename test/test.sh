@@ -566,7 +566,7 @@ function experiment_execute_taskset() {
 
 function kernel_change() {
 	# The required kernel is expressed by the $scheduler variable
-	cp ./kernels/$scheduler.zImage /media/boot/zImage
+	cp "$KERNELS_LOCATION"/"$scheduler".zImage /media/boot/zImage
 }
 
 function print_progress() {
