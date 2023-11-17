@@ -61,8 +61,8 @@ def make_plot(data, outfile, absolute=True, migrations=False):
 
     figure, axis = plt.subplots()
     for number, group in data.groupby('num_tasks'):
-        if number > 12:
-            continue
+        # if number > 12:
+        #     continue
         axis.scatter(group['util'], group[yfield], label=f"{number:02d} tasks", alpha=.3)
 
     axis.set(
@@ -79,8 +79,8 @@ def make_plot(data, outfile, absolute=True, migrations=False):
 def make_plot_freq(data, outfile, performance=False, which='mean'):
     figure, axis = plt.subplots()
     for number, group in data.groupby('num_tasks'):
-        if number > 12:
-            continue
+        # if number > 12:
+        #     continue
         utils = []
         freqs = []
         for idx, mdata in group.groupby(['util', 'tset_idx']):

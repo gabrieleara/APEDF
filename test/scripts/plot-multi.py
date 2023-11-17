@@ -90,7 +90,7 @@ def make_plot_miss(data_dict, outfile, which='mean', quantile=.5, log=False):
     if log:
         axis.set_yscale('log')
     # bottom=1.0 if performance else 0
-    axis.set_ylim(top=.4, bottom=-0.1)
+    axis.set_ylim(top=.7, bottom=-0.1)
     axis.grid()
     axis.legend()
     figure.savefig(outfile, transparent=transparent_print(outfile))

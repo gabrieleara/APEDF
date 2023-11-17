@@ -212,9 +212,9 @@ def parse_taskset(tset_dir):
     global tsets_type
 
     tset_dirname = os.path.basename(tset_dir)
-    tset_info = parse.parse("ts_n{num_tasks:2d}_i{tset_idx:2d}_u{util:f}.rt-app.d",
+    tset_info = parse.parse("ts_n{num_tasks:2d}_i{tset_idx:2d}_u{util:f}.out.d",
                             tset_dirname)
-    mperiod_info = parse.parse("{period:d}.rt-app.d", tset_dirname)
+    mperiod_info = parse.parse("{period:d}.out.d", tset_dirname)
 
     if tset_info is None and mperiod_info is None:
         eprint(
@@ -237,6 +237,16 @@ def parse_taskset(tset_dir):
     # Get dictionary from parse result type
     tset_info = tset_info.named
 
+    therm_data = pd.read_csv(f"{tset_dir}/therm.log", sep=' ', header=None)
+
+    # The fifth column should refer to the GPU, we will discard it for now
+    # Get the maximum among the maximum values of each of the first 4 columns
+    therm_max = therm_data.iloc[:, :4].max().max()
+
+
+    # TODO
+    # power_data = pd.read_csv(f"{tset_dir}/therm.log", sep=',')
+
     tset_stats = {
         **tset_info,
         'count': 0,
@@ -246,6 +256,7 @@ def parse_taskset(tset_dir):
         'maxslack': -float('inf'),
         'migrations': 0,
         'migrations_ratio': 0,
+        'therm_max': therm_max,
     }
 
     tasks_stats = []
@@ -366,7 +377,7 @@ def main():
         parser.print_help()
         return 1
 
-    tset_dirs = [d for d in os.listdir(args.in_dir) if 'rt-app.d' in d]
+    tset_dirs = [d for d in os.listdir(args.in_dir) if 'out.d' in d]
     for tset_dir in tset_dirs:
         try:
             tset_stats, tasks_stats = parse_taskset(
