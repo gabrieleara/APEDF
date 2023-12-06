@@ -732,7 +732,7 @@ function main() {
 	SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 	SCRIPT_DIR="$(realpath "$(dirname "$SCRIPT_PATH")")"
 
-	PROJ_PATH="$(realpath "$SCRIPT_DIR"/../../..)"
+	PROJ_PATH="$(realpath "$SCRIPT_DIR"/..)"
 	TEST_PATH="$(realpath "$PROJ_PATH"/test)"
 	APPS_PATH="$PROJ_PATH/test/apps"
 	RTAPP="$APPS_PATH/rt-app/src/rt-app"
