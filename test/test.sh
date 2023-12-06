@@ -41,7 +41,7 @@ RTAPP_TIMEOUT=60
 RTAPP_LOGLEVEL=10
 
 # What to set as rt-limit for the system (-1 disable rt throttling)
-RTLIMIT=-1
+RTLIMIT=
 
 # -------------------- TEMPERATURE CHECK AND MONITOR -------------------- #
 
@@ -430,6 +430,43 @@ function trim() {
 	xargs
 }
 
+function get_progress() {
+	# Parses current line searching for the current progress:
+	local line="$1"
+	line=$(echo "$line" | trim)
+	if [ -z "$line" ] ||
+		echo "$line" | grep -q 'command not found'; then
+		echo ''
+		return
+	fi
+
+	# If this line is shown, it's over
+	if echo "$line" | grep -q 'All tests successful'; then
+		echo 'END'
+		return
+	fi
+
+	# If this line is shown, we have to restart the script
+	if echo "$line" | grep -q 'Swapping kernel'; then
+		echo 'RESTART'
+		return
+	fi
+
+	# Otherwise we need to check whether there is a progress to display:
+	local progress
+	progress="$(echo "$line" | grep -E -o '\[[0-9]+/[0-9]+\]' || true)"
+	if [ -n "$progress" ]; then
+		echo "$progress"
+		return
+	fi
+
+	# Check if it is clean up
+	if echo $line | grep -q 'Cleaning'; then
+		echo ''
+		return
+	fi
+}
+
 # Progress is expressed by a log file called last_experiment.log. The
 # following are possible values for the progress (part of the last line,
 # not the full line):
@@ -440,53 +477,44 @@ function trim() {
 function experiment_check_progress() {
 	local running=0
 	local tmpfile
+	local tmpfile2
 	tmpfile=$(mktemp)
+	tmpfile2=$(mktemp)
 
 	if experiment_is_running; then
 		running=1
 	fi
 
 	# Read progress file in reverse
-	tac "last_experiment.log" | head >"$tmpfile"
+	cat "last_experiment.log" | tail >"$tmpfile2"
+	echo '' >>"$tmpfile2"
+	tac "$tmpfile2">"$tmpfile"
+
+	local progress=''
 
 	# Get first non-blank line
 	local line
 	while read -r line; do
-		line=$(echo "$line" | trim)
-		if [ -n "$line" ] &&
-			! (echo "$line" | grep -q 'command not found') &&
-			! (echo "$line" | grep -q "Cleaning up"); then
-			break
+		progress="$(get_progress "$line")"
+		if [ -n "$progress" ]; then
+			case "$progress" in
+			END) echo END ; return 0 ;;
+			RESTART) echo RESTART ; return 1 ;;
+			*)
+				if [ "$running" = 1 ]; then
+					echo "$progress"
+					return 0
+				else
+					echo RESTART
+					return 1
+				fi
+				;;
+			esac
 		fi
 	done <"$tmpfile"
-	if [ -z "$line" ]; then
-		echo 'Empty LOG file??' >&2
-		return 1
-	fi
 
-	# If this line is shown, it's over
-	if echo "$line" | grep -q 'All tests successful'; then
-		echo 'END'
-		return 0
-	fi
-
-	# If this line is shown, we have to restart the script
-	if echo "$line" | grep -q 'Swapping kernel'; then
-		echo 'RESTART'
-		return 1
-	fi
-
-	# If no process was found before, raise error
-	if [ $running = 0 ]; then
-		echo 'No process running' >&2
-		return 1
-	fi
-
-	# Extract progress
-	local progress
-	progress="$(echo "$line" | grep -E -o '\[[0-9]+/[0-9]+\]')"
-	echo "$progress"
-	return 0
+	echo ERROR
+	return 1
 }
 
 function experiment_start() {
@@ -692,7 +720,10 @@ function setup() {
 	THERM_MONITOR_OUT="$TMPDIR/therm.log"
 	minicom_setup
 	cgroupv2_create_all
-	sysctl -w kernel.sched_rt_runtime_us="$RTLIMIT" >/dev/null
+	if [ -n "$RTLIMIT" ]; then
+		echo + Setting kernel.sched_rt_runtime_us="$RTLIMIT"
+		sysctl -w kernel.sched_rt_runtime_us="$RTLIMIT" >/dev/null
+	fi
 	isolate_rescue_ssh
 }
 
