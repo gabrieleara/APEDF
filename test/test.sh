@@ -549,7 +549,7 @@ function experiment_execute_taskset() {
 	echo 1 >/proc/sys/vm/drop_caches
 
 	# Clean stuff from previous execution again, just in case
-	rm -f "$TMPDIR/"*
+	rm -rf "${TMPDIR:?}/"*
 
 	power_meter_stuck_check "$dir_out/power.log"
 
