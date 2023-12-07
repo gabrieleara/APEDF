@@ -706,18 +706,12 @@ function main() {
 
 	PROJ_PATH="$(realpath "$SCRIPT_DIR"/..)"
 	TEST_PATH="$(realpath "$PROJ_PATH"/test)"
-	HELPERS_PATH="$(realpath "$TEST_PATH/scripts/execution)"
+	HELPERS_PATH="$(realpath "$TEST_PATH/scripts/execution")"
 	APPS_PATH="$PROJ_PATH/test/apps"
 	RTAPP="$APPS_PATH/rt-app/src/rt-app"
 	SERIAL_LOGGER="$HELPERS_PATH/slogger.py"
 	NOTIFIER="$HELPERS_PATH/notifier.py"
 	STUCK_CHECKER="$HELPERS_PATH/powerstuck.awk"
-
-	TMPDIR=/mytmp
-	mkdir -p /mytmp
-	if ! mountpoint -q -- "$TMPDIR"; then
-		mount -t tmpfs -o size=1000Mi,mode=1777 apedf_test_tmp "$TMPDIR"
-	fi
 
 	# Move to the correct directory
 	cd "$TEST_PATH"
@@ -733,6 +727,12 @@ function main() {
 	# 	experiment_start_if_rebooted
 	# 	;;
 	run)
+		TMPDIR=/mytmp
+		mkdir -p /mytmp
+		if ! mountpoint -q -- "$TMPDIR"; then
+			mount -t tmpfs -o size=1000Mi,mode=1777 apedf_test_tmp "$TMPDIR"
+		fi
+
 		experiment_run
 		;;
 	*)
