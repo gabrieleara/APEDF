@@ -473,7 +473,7 @@ function power_meter_stuck_check() {
 	local stuck_check=
 
 	# Power logs have CRLF line endings... sigh...
-	stuck_check="$(sed 's/\r$//' <"$fname" | "$STUCK_CHECKER" -F,)"
+	stuck_check="$(sed 's/\r$//' <"$fname" | "$STUCK_CHECKER" -F, 2>/dev/null)"
 	case "$stuck_check" in
 	good)
 		# What we want, cool, keep going

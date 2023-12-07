@@ -20,32 +20,17 @@ function argmax(array,   i, max, imax) {
 	return imax;
 }
 
- 1  0009177275
- 2  15055
- 3  0330
- 4  04968
- 5  0
- 6  04997
- 7  0742
- 8  03707
- 9  1
-10  00
-11  00000
-12  0000
-13  00000
-14  0
-15  00
-16  c9
-17  13
-
 BEGIN {
 	last = -1;
 	count = 0;
 	MY_COLUMN = 8;
+	skipped=0;
 }
 
 NF != 17 {
 	# All lines with a number different than 17 fields are skipped
+	printf("NF != 17 => %d\n", NF) > "/dev/stderr";
+	skipped++;
 	next;
 }
 
@@ -72,6 +57,10 @@ END {
 
 	imax = argmax(maxes);
 	count = maxes[imax];
+
+	if (skipped == NR && NR > 0) {
+		printf("skipped all lines!\n") > "/dev/stderr";
+	}
 
 	if (NR < 10 || imax == -1) {
 		printf("empty\n");
