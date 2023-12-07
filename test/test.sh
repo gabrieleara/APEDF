@@ -685,6 +685,10 @@ function isolate_rescue_ssh() {
 	# Hangs after a while, but always succeeds in my experience, so we
 	# put a timeout of 10 seconds, just in case
 	timeout 10 systemctl isolate rescue-ssh || true
+
+	# Restart resolved so that we can send notifications via Telegram
+	# (if the proper env variables are configured, see notifier.py)
+	systemctl start systemd-resolved
 }
 
 function setup_ramfs() {
