@@ -43,6 +43,25 @@ RTAPP_LOGLEVEL=10
 # What to set as rt-limit for the system (-1 disable rt throttling)
 RTLIMIT=
 
+# ---------------------------- NOTIFICATIONS ---------------------------- #
+
+NOTIFICATION_MULTIPLE=10
+
+function notify() {
+	"$NOTIFIER" "$@"
+}
+
+function notify_progress() {
+	local progress="$1"
+	local total="$2"
+	if (( progress % NOTIFICATION_MULTIPLE != 0 )); then
+		# Skip notification
+		return
+	fi
+
+	notify progress "[$progress/$total]"
+}
+
 # -------------------- TEMPERATURE CHECK AND MONITOR -------------------- #
 
 function therm_files() {
@@ -115,137 +134,44 @@ function therm_monitor_stop() {
 
 # ---------------------------- POWER MONITOR ---------------------------- #
 
-# The power monitor uses minicom (piped to some other programs for parsing
-# and formatting) to get periodic samples of the power consumption of the
-# board.
+# The power monitor uses a python script to read from the serial and a
+# couple of piped commands to cut the relevant information.
 #
-# Minicom has very strict requirements on how it is supposed to be started
-# and stopped. The preferred way to stop minicom is to send the following
-# sequence of characters: Alt+X, CR
-#
-# For this purpose, the function minicom_killer waits for an interrupt and
-# then sends the requested sequence to the stdout, so that it can be
-# received by minicom after the pipe.
+# This implementation is an improvement over previous versions because it
+# runs less programs concurrently to rtapp, delegating most other
+# operations to post-processing.
 
 TMPDIR=''
 POWER_MONITOR_OUT=''
-PM_LOGGER_PID=''
-PM_MINICOM_PID=''
-PM_MINICOM_FIFO_IN=''
-PM_MINICOM_FIFO_OUT=''
-
-function minicom_killer() {
-	(
-		# Wait for any input character or STDIN termination
-		read -r || true
-		# Output the sequence Alt+x, CR to STDOUT
-		echo -ne "\x01x\r"
-	)
-}
-
-# In addition, minicom behaves also differently whether it is outputting to
-# STDOUT or to a file. We want the behavior of outputting to a file, but we
-# want to post-process it to keep only what we really want. To avoid
-# filling the filesystem with trash data and then filtering it, we will
-# filter it during minicom execution by sending the output to a FIFO and
-# then parsing the output of the FIFO.
-
-function minicom_setup() {
-	PM_MINICOM_FIFO_IN="$TMPDIR/pm_minicom_fifo_in"
-	PM_MINICOM_FIFO_OUT="$TMPDIR/pm_minicom_fifo_out"
-	POWER_MONITOR_OUT="$TMPDIR/power.log"
-
-	mkfifo "$PM_MINICOM_FIFO_IN"
-	mkfifo "$PM_MINICOM_FIFO_OUT"
-
-	local minicom_confdir
-	minicom_confdir="$(
-		minicom -h |                  # print help, to check in which directory we have to put it
-			grep 'compiled to' |         # find the correct line
-			sed 's/^.*compiled to//gi' | # remove stuff before the /
-			sed 's/\.$//gi' |            # remove trailing dot
-			xargs                        # trim surrounding whitespace
-	)"
-
-	if [ ! -d "$minicom_confdir" ] && ! mkdir -p "$minicom_confdir"; then
-		echo "Error parsing minicom configuration directory: '$minicom_confdir'" >&2
-		return 1
-	fi
-
-	MINICOM_CONF="$minicom_confdir/minirc.smartpower.dfl"
-
-	# Write the correct minicom configuration to the required directory:
-	cat <<EOF >"$MINICOM_CONF"
-# Machine-generated file - use "minicom -s" to change parameters.
-pu port             /dev/ttyUSB0
-pu baudrate         921600
-pu bits             8
-pu parity           N
-pu stopbits         1
-pu rtscts           No
-EOF
-}
+POWER_MONITOR_PID=''
 
 function power_monitor_start() {
-	# This function is MAGIC, do not touch unless you know what you are
-	# really doing!
-	#
-	# Chances are that each single character is required for the power
-	# logging to work properly!
-
-	# Output format control, needs to be separated from minicom because
-	# of all the garbage that it spits out if we do not use the -C
-	# option
-	#
-	# The setsid is necessary so that interrupts delivered to the bash
-	# script are not delivered to the disowned processes
-	(
-		grep '^\[' <"$PM_MINICOM_FIFO_OUT" |                                                          # Only lines starting with a timestamp
-			sed 's/\[//gi' | sed 's/\] /,/gi' |                                                          # Replace some characters to have a nice CSV
-			cut -d',' -f1,7,8,9,10,11 |                                                                  # Parse only interesting columns
-			sed -e '1 i timestamp,voltage_mV,current_mA,power_mW,onoff,interrupts' >"$POWER_MONITOR_OUT" # Add header before first line
-	) &
-	PM_LOGGER_PID="$!"
-	disown -r "$PM_LOGGER_PID"
-
-	# Launch minicom and the wrapper, the wrapper will send to minicom
-	# a terminating sequence when something is written to the
-	# PM_MINICOM_FIFO_IN pipe or when it is closed by another process.
-	#
-	# The setsid is necessary so that interrupts delivered to the bash
-	# script are not delivered to the disowned processes
-	(
-		minicom_killer <"$PM_MINICOM_FIFO_IN" |                                                 # Wait for console termination
-			sudo minicom smartpower.dfl -O timestamp=extended -C "$PM_MINICOM_FIFO_OUT" >/dev/null # Monitor the console and log to FIFO
-	) &
-	PM_MINICOM_PID="$!"
-	disown -r "$PM_MINICOM_PID"
+	# Remember in post-processing (collecting) phase to check for:
+	# - the number of fields in each row
+	# - the checksum present in each row
+	# - filter out unneded data columns (we keep it all now to avoid
+	#   doing conformance checks online)
+	"$SERIAL_LOGGER" \
+		--port /dev/ttyUSB0 \
+		--baudrate 230400 \
+		--bytesize 8 \
+		--parity N \
+		--stopbits 1 \
+		--rtscts 0 \
+		>"$POWER_MONITOR_OUT" &
+	POWER_MONITOR_PID="$!"
+	disown -r "$POWER_MONITOR_PID"
 }
 
 function power_monitor_stop() {
-	local echopid
-	echo '' >"$PM_MINICOM_FIFO_IN" &
-	echopid=$!
-
-	# Wait for the processes involved in the power meter to finish.
-	# Since they are disowned, they are invisible to 'wait'. Also, we
-	# are running in a function, so even if it was not disowned 'wait'
-	# probably would not have worked anyway.
-	if [ -n "$PM_MINICOM_PID" ]; then
-		tail --pid="$PM_MINICOM_PID" -f /dev/null
+	if [ -z "$POWER_MONITOR_PID" ]; then
+		return 0
 	fi
 
-	# Same here
-	if [ -n "$PM_LOGGER_PID" ]; then
-		tail --pid="$PM_LOGGER_PID" -f /dev/null
-	fi
-
-	# Sometimes, the processes are already over and we need to kill the
-	# hanging echo
-	kill -9 $echopid >/dev/null 2>/dev/null || true
-
-	# Wait for the echo to terminate, just in case
-	wait >/dev/null 2>/dev/null || true
+	# Send SIGINT and wait for program termination
+	kill -SIGINT "$POWER_MONITOR_PID"
+	tail --pid="$POWER_MONITOR_PID" -f /dev/null
+	POWER_MONITOR_PID=''
 }
 
 # --------------------------- MANAGE CGROUPS ---------------------------- #
@@ -488,7 +414,7 @@ function experiment_check_progress() {
 	# Read progress file in reverse
 	cat "last_experiment.log" | tail >"$tmpfile2"
 	echo '' >>"$tmpfile2"
-	tac "$tmpfile2">"$tmpfile"
+	tac "$tmpfile2" >"$tmpfile"
 
 	local progress=''
 
@@ -498,8 +424,14 @@ function experiment_check_progress() {
 		progress="$(get_progress "$line")"
 		if [ -n "$progress" ]; then
 			case "$progress" in
-			END) echo END ; return 0 ;;
-			RESTART) echo RESTART ; return 1 ;;
+			END)
+				echo END
+				return 0
+				;;
+			RESTART)
+				echo RESTART
+				return 1
+				;;
 			*)
 				if [ "$running" = 1 ]; then
 					echo "$progress"
@@ -536,15 +468,45 @@ function experiment_start() {
 # 	fi
 # }
 
+function power_meter_stuck_check() {
+	local fname="$1"
+	local stuck_check=
+
+	# Power logs have CRLF line endings... sigh...
+	stuck_check="$(sed 's/\r$//' <"$fname" | "$STUCK_CHECKER" -F,)"
+	case "$stuck_check" in
+	good)
+		# What we want, cool, keep going
+		return 0
+		;;
+	stuck)
+		# Well, crap, stop and ask for the user intervention
+		notify stuck
+		echo "POWER METER IS STUCK! ABORTING!"
+		return 1
+		;;
+	empty)
+		# Even worse!!
+		notify stuck empty
+		echo "POWER METER IS EMPTY! ABORTING!"
+		return 1
+		;;
+	*)
+		# Parsing error
+		echo "AWK PARSING ERROR! ABORTING!"
+		return 1
+		;;
+	esac
+}
+
 function experiment_execute_taskset() {
 	# Relevant variables:
 	# - file_in: taskset json file
 	# - dir_out: where to place the output of the experiment
-	mkdir -p /tmp/rt-app-logs
 
 	# Clean stuff from previous execution
-	rm -f "$THERM_MONITOR_OUT" "$POWER_MONITOR_OUT"
-	rm -f /tmp/rt-app-logs/*
+	rm -f "$TMPDIR/"*
+	mkdir -p "$TMPDIR/rt-app-logs"
 
 	# Check that the temperature is low enough
 	while ! therm_can_begin; do
@@ -572,22 +534,24 @@ function experiment_execute_taskset() {
 	therm_monitor_stop
 
 	# Copy back trace buffer
-	cat /sys/kernel/tracing/trace >/tmp/kernel.trace
+	cat /sys/kernel/tracing/trace >"$TMPDIR/kernel.trace"
 	echo 0 >/sys/kernel/tracing/tracing_on
 
 	sleep 2s
 
 	# Copy back results
-	cp -a /tmp/rt-app-logs/* "$dir_out"
+	cp -a "$TMPDIR/rt-app-logs/"* "$dir_out"
 	cp -a "$POWER_MONITOR_OUT" "$dir_out"
 	cp -a "$THERM_MONITOR_OUT" "$dir_out"
-	cp -a /tmp/kernel.trace "$dir_out"
+	cp -a "$TMPDIR/kernel.trace" "$dir_out"
 
 	sync
 	echo 1 >/proc/sys/vm/drop_caches
 
 	# Clean stuff from previous execution again, just in case
-	rm -f /tmp/rt-app-logs/*
+	rm -f "$TMPDIR/"*
+
+	power_meter_stuck_check "$dir_out/power.log"
 
 	printf 'DONE!'
 }
@@ -633,6 +597,10 @@ function experiment_run_step() {
 		kernel_change
 		sleep 5
 		sync
+
+		notify reboot
+		sleep 2
+
 		reboot
 	fi
 
@@ -646,6 +614,9 @@ function experiment_run_step() {
 
 	# We have the correct kernel and governor pair, time to start the experiment
 	experiment_execute_taskset
+
+	# We notify only on successful execution
+	notify_progress "$cur_total_index" "$N_RUNS"
 }
 
 function experiment_run() {
@@ -672,6 +643,7 @@ function experiment_run() {
 	done
 
 	printf " + All tests successful!!\n"
+	notify finish
 }
 
 # -------------------------------- MAIN --------------------------------- #
@@ -690,7 +662,8 @@ function cleanup() {
 	fi
 
 	if [ -d "$TMPDIR" ]; then
-		rm -rf "$TMPDIR"
+		rm -rf "$TMPDIR/"*
+		# umount "$TMPDIR" || true
 	fi
 
 	if [ "$1" = EXIT ]; then
@@ -716,9 +689,8 @@ function isolate_rescue_ssh() {
 
 function setup() {
 	setup_cleanup
-	TMPDIR=$(mktemp -d)
 	THERM_MONITOR_OUT="$TMPDIR/therm.log"
-	minicom_setup
+	POWER_MONITOR_OUT="$TMPDIR/power.log"
 	cgroupv2_create_all
 	if [ -n "$RTLIMIT" ]; then
 		echo + Setting kernel.sched_rt_runtime_us="$RTLIMIT"
@@ -734,8 +706,18 @@ function main() {
 
 	PROJ_PATH="$(realpath "$SCRIPT_DIR"/..)"
 	TEST_PATH="$(realpath "$PROJ_PATH"/test)"
+	HELPERS_PATH="$(realpath "$TEST_PATH/scripts/execution)"
 	APPS_PATH="$PROJ_PATH/test/apps"
 	RTAPP="$APPS_PATH/rt-app/src/rt-app"
+	SERIAL_LOGGER="$HELPERS_PATH/slogger.py"
+	NOTIFIER="$HELPERS_PATH/notifier.py"
+	STUCK_CHECKER="$HELPERS_PATH/powerstuck.awk"
+
+	TMPDIR=/mytmp
+	mkdir -p /mytmp
+	if ! mountpoint -q -- "$TMPDIR"; then
+		mount -t tmpfs -o size=1000Mi,mode=1777 apedf_test_tmp "$TMPDIR"
+	fi
 
 	# Move to the correct directory
 	cd "$TEST_PATH"

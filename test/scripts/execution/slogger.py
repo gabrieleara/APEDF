@@ -14,6 +14,7 @@ Install pyserial library:
     sys.exit(1)
 
 # Other Imports
+import os
 from typing import Literal
 from dataclasses import dataclass, field
 from argparse_dataclass import ArgumentParser
@@ -83,6 +84,13 @@ def main(quit_signal):
 #-- main()
 
 
-
 if __name__ == "__main__":
-    main(quit_signal)
+    # To pipe output correctly to other programs like "head"
+    try:
+        sys.exit(main(quit_signal))
+    except BrokenPipeError:
+        # Python flushes standard streams on exit; redirect remaining output
+        # to devnull to avoid another BrokenPipeError at shutdown
+        devnull = os.open(os.devnull, os.O_WRONLY)
+        os.dup2(devnull, sys.stdout.fileno())
+        sys.exit(0)
