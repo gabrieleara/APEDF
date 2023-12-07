@@ -73,7 +73,7 @@
     "calibration": 92,
     "pi_enabled": false,
     "lock_pages": true,
-    "logdir": "/mytmp/rt-app-logs",
+    "logdir": "/mnt/ramfs/rt-app-logs",
     "log_basename": "rt-app",
     "log_size": "auto",
     "gnuplot": false

@@ -327,7 +327,7 @@ def main():
             'calibration': args.calibration,
             'pi_enabled': False,
             'lock_pages': True,
-            'logdir': '/mytmp/rt-app-logs',
+            'logdir': '/mnt/ramfs/rt-app-logs',
             'log_basename': 'rt-app',
             'log_size': 'auto',
             'gnuplot': False,

@@ -387,7 +387,7 @@ function get_progress() {
 	fi
 
 	# Check if it is clean up
-	if echo $line | grep -q 'Cleaning'; then
+	if echo "$line" | grep -q 'Cleaning'; then
 		echo ''
 		return
 	fi
@@ -412,7 +412,7 @@ function experiment_check_progress() {
 	fi
 
 	# Read progress file in reverse
-	cat "last_experiment.log" | tail >"$tmpfile2"
+	tail <"last_experiment.log" >"$tmpfile2"
 	echo '' >>"$tmpfile2"
 	tac "$tmpfile2" >"$tmpfile"
 
@@ -662,8 +662,8 @@ function cleanup() {
 	fi
 
 	if [ -d "$TMPDIR" ]; then
-		rm -rf "$TMPDIR/"*
-		# umount "$TMPDIR" || true
+		rm -rf "${TMPDIR:?}/"*
+		umount "$TMPDIR" || true
 	fi
 
 	if [ "$1" = EXIT ]; then
@@ -687,8 +687,26 @@ function isolate_rescue_ssh() {
 	timeout 10 systemctl isolate rescue-ssh || true
 }
 
+function setup_ramfs() {
+	mkdir -p "$TMPDIR"
+	if mountpoint -q -- "$TMPDIR"; then
+		# Already mounted, cool
+		return
+	fi
+
+	# Check whether there is an entry in fstab for TMPDIR
+	if ! grep -q -F "$TMPDIR" /etc/fstab; then
+		# Entry does not exist, add it:
+		echo "none \"$TMPDIR\" ramfs noauto,user,size=1Gi,mode=1777 0 0" >>/etc/fstab
+	fi
+
+	mount "$TMPDIR"
+}
+
 function setup() {
+	TMPDIR=/mnt/ramfs
 	setup_cleanup
+	setup_ramfs
 	THERM_MONITOR_OUT="$TMPDIR/therm.log"
 	POWER_MONITOR_OUT="$TMPDIR/power.log"
 	cgroupv2_create_all
@@ -700,8 +718,8 @@ function setup() {
 }
 
 function main() {
+	# SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 	SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
-	SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 	SCRIPT_DIR="$(realpath "$(dirname "$SCRIPT_PATH")")"
 
 	PROJ_PATH="$(realpath "$SCRIPT_DIR"/..)"
@@ -727,12 +745,6 @@ function main() {
 	# 	experiment_start_if_rebooted
 	# 	;;
 	run)
-		TMPDIR=/mytmp
-		mkdir -p /mytmp
-		if ! mountpoint -q -- "$TMPDIR"; then
-			mount -t tmpfs -o size=1000Mi,mode=1777 apedf_test_tmp "$TMPDIR"
-		fi
-
 		experiment_run
 		;;
 	*)
