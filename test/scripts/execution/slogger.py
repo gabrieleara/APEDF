@@ -72,7 +72,7 @@ def main(quit_signal):
             if quit:
                 continue
 
-            data = serial_port.readline().decode('ascii')
+            data = serial_port.readline().decode()
             if len(data) > 0:
                 sys.stdout.write(data)
 
