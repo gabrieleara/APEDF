@@ -36,9 +36,15 @@ def read_args():
     return parser.parse_args(sys.argv[1:])
 
 quit_signal = Queue(2)
+abort_signal = Queue(2)
 
 def handler(signal_received, frame):
+    # A second interrupt will kill the process
+    if abort_signal.get_nowait():
+        sys.exit(1)
+
     quit_signal.put(True)
+    abort_signal.put(True)
 
 def main(quit_signal):
     signal(SIGINT, handler)
