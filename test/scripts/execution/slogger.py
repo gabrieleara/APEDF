@@ -40,8 +40,13 @@ abort_signal = Queue(2)
 
 def handler(signal_received, frame):
     # A second interrupt will kill the process
-    if abort_signal.get_nowait():
-        sys.exit(1)
+    try:
+        if abort_signal.get_nowait():
+            sys.exit(1)
+    except Empty:
+        pass
+
+    # eprint("Interrupt Received!")
 
     quit_signal.put(True)
     abort_signal.put(True)
