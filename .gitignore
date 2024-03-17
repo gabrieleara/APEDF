@@ -7,3 +7,4 @@ old/
 /*.tar
 /OLD/
 /experiments/
+__pycache__
